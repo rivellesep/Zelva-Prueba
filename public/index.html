@@ -1,184 +1,630 @@
 <!DOCTYPE html>
 <html lang="ca">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zelva</title>
-    <link rel="icon" type="image/png" href="./images/logo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zelva</title>
+  <link rel="icon" type="image/png" href="./images/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green-dark:#1A5C52; --green-mid:#2E7D32; --green-light:#C8E6C9;
+      --bg:#121212; --surface:#1E1E1E; --surface2:#2A2A2A;
+      --text:#E8F5E9; --text-muted:#9E9E9E;
+      --error:#C62828; --success:#388E3C;
+      --radius:8px; --radius-lg:12px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+    .hidden { display:none !important; }
+    .container { max-width:900px; margin:0 auto; padding:0 24px; }
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css">
+    /* NAV */
+    nav { background:var(--surface); border-bottom:1px solid rgba(255,255,255,0.06); padding:0 24px; height:60px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; cursor:pointer; }
+    .logo-icon { width:34px; height:34px; background:var(--green-dark); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; color:#fff; }
+    .logo-text { font-size:20px; font-weight:700; color:var(--text); }
+    .logo-text span { color:#4CAF50; }
+    .nav-links { display:flex; gap:4px; list-style:none; }
+    .nav-links a { text-decoration:none; color:var(--text-muted); font-size:14px; font-weight:500; padding:6px 12px; border-radius:8px; cursor:pointer; transition:all .15s; }
+    .nav-links a:hover { color:var(--text); background:var(--surface2); }
+    .nav-links a.active { color:#4CAF50; background:rgba(26,92,82,0.15); }
+    .nav-right { display:flex; align-items:center; gap:10px; }
+    .ecopoints { display:flex; align-items:center; gap:5px; font-size:13px; font-weight:600; color:#4CAF50; background:rgba(76,175,80,0.1); padding:5px 10px; border-radius:20px; }
+    .nav-avatar { width:34px; height:34px; border-radius:50%; background:var(--green-dark); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#fff; cursor:pointer; border:2px solid transparent; transition:border-color .15s; }
+    .nav-avatar:hover { border-color:#4CAF50; }
 
-    <style>
-        body {
-            background-color: #f4f7f6;
-            padding-top: 20px;
-        }
+    /* BTNS */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:var(--radius); font-family:'Inter',sans-serif; font-size:14px; font-weight:600; cursor:pointer; border:none; text-decoration:none; transition:background .15s; }
+    .btn-primary { background:var(--green-dark); color:#fff; }
+    .btn-primary:hover { background:var(--green-mid); }
+    .btn-outline { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,0.12); }
+    .btn-outline:hover { background:var(--surface2); }
+    .btn-danger { background:var(--error); color:#fff; }
+    .btn-danger:hover { background:#b71c1c; }
+    .btn-sm { padding:6px 12px; font-size:13px; }
+    .btn-block { width:100%; justify-content:center; }
 
-        .card {
-            margin-bottom: 20px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+    /* FORMS */
+    .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+    label { font-size:14px; font-weight:500; color:var(--text-muted); }
+    input, textarea, select { background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius); color:var(--text); font-family:'Inter',sans-serif; font-size:15px; padding:11px 14px; outline:none; transition:border-color .15s; width:100%; }
+    input:focus, textarea:focus, select:focus { border-color:var(--green-dark); }
+    input::placeholder, textarea::placeholder { color:var(--text-muted); }
+    select option { background:var(--surface2); }
 
-        .titulo {
-            text-align: center;
-            color: #2d5a27;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
+    /* ALERTS */
+    .alert { padding:12px 16px; border-radius:var(--radius); font-size:14px; font-weight:500; margin-bottom:16px; }
+    .alert-error { background:rgba(198,40,40,0.15); color:#EF9A9A; border-left:3px solid var(--error); }
+    .alert-success { background:rgba(56,142,60,0.15); color:#A5D6A7; border-left:3px solid var(--success); }
 
-        .btn-main {
-            background-color: #2d5a27;
-            color: white;
-        }
+    /* TAGS */
+    .tag { display:inline-block; font-size:11px; font-weight:500; padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:.4px; }
+    .tag-intercanvi { background:rgba(26,92,82,0.3); color:#4CAF50; }
+    .tag-donacio { background:rgba(56,142,60,0.3); color:#81C784; }
+    .tag-punts { background:rgba(46,125,50,0.25); color:#A5D6A7; }
+    .tag-estat { background:rgba(255,255,255,0.07); color:var(--text-muted); }
 
-        .btn-main:hover {
-            background-color: #1e3d1a;
-            color: white;
-        }
+    /* CARDS */
+    .card { background:var(--surface); border-radius:var(--radius-lg); border:1px solid rgba(255,255,255,0.06); overflow:hidden; transition:transform .15s,border-color .15s; }
+    .card:hover { transform:translateY(-2px); border-color:var(--green-dark); }
+    .card-body { padding:16px; }
+    .card-img { height:160px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:40px; }
+    .card-title { font-size:15px; font-weight:600; margin:8px 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .card-desc { font-size:13px; color:var(--text-muted); margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .card-footer { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted); }
+    .card-points { font-size:13px; font-weight:600; color:#4CAF50; }
+    .avatar-sm { width:22px; height:22px; border-radius:50%; background:var(--green-dark); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:#fff; flex-shrink:0; }
+    .avatar-lg { width:72px; height:72px; border-radius:50%; background:var(--green-dark); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; color:#fff; flex-shrink:0; }
 
-        #profileForm {
-            display: none;
-        }
+    /* FOOTER */
+    footer { background:var(--surface); border-top:1px solid rgba(255,255,255,0.06); padding:32px 24px; margin-top:60px; }
+    .footer-inner { max-width:900px; margin:0 auto; display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+    .footer-brand p { color:var(--text-muted); font-size:13px; margin-top:6px; max-width:220px; }
+    .footer-links h4 { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); margin-bottom:12px; }
+    .footer-links a { display:block; font-size:14px; color:var(--text-muted); text-decoration:none; margin-bottom:6px; cursor:pointer; transition:color .15s; }
+    .footer-links a:hover { color:var(--text); }
+    .footer-bottom { max-width:900px; margin:24px auto 0; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:8px; }
 
-        /* Oculto hasta que el usuario haga login */
-    </style>
+    /* GRID */
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+
+    /* LANDING */
+    #page-landing { min-height:calc(100vh - 60px); display:flex; align-items:center; justify-content:center; text-align:center; padding:40px 24px; }
+    .landing-inner { max-width:520px; }
+    .landing-badge { display:inline-block; background:rgba(26,92,82,0.2); color:#4CAF50; font-size:12px; font-weight:600; padding:5px 12px; border-radius:20px; margin-bottom:20px; letter-spacing:.5px; text-transform:uppercase; }
+    .landing-inner h1 { font-size:42px; font-weight:700; line-height:1.15; margin-bottom:16px; }
+    .landing-inner h1 span { color:#4CAF50; }
+    .landing-inner p { font-size:16px; color:var(--text-muted); line-height:1.7; margin-bottom:32px; }
+    .landing-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .landing-stats { display:flex; gap:32px; justify-content:center; margin-top:48px; padding-top:32px; border-top:1px solid rgba(255,255,255,0.06); }
+    .stat-num { font-size:24px; font-weight:700; color:#4CAF50; }
+    .stat-label { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+    /* LOGIN */
+    #page-login { display:flex; align-items:center; justify-content:center; min-height:calc(100vh - 60px); padding:40px 24px; }
+    .auth-box { background:var(--surface); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:36px; width:100%; max-width:400px; }
+    .auth-tabs { display:flex; background:var(--surface2); border-radius:var(--radius); padding:4px; margin-bottom:24px; }
+    .auth-tab { flex:1; text-align:center; padding:8px; font-size:14px; font-weight:500; color:var(--text-muted); cursor:pointer; border-radius:6px; transition:all .15s; }
+    .auth-tab.active { background:var(--green-dark); color:#fff; }
+    .auth-divider { display:flex; align-items:center; gap:12px; margin:16px 0; color:var(--text-muted); font-size:12px; }
+    .auth-divider::before,.auth-divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+    .btn-google { background:var(--surface2); color:var(--text); border:1px solid rgba(255,255,255,0.1); width:100%; justify-content:center; margin-bottom:4px; }
+    .btn-google:hover { background:#2e2e2e; }
+    .forgot { text-align:center; margin-top:12px; font-size:13px; color:var(--text-muted); cursor:pointer; }
+    .forgot:hover { color:#4CAF50; }
+
+    /* EXPLORAR */
+    #page-explorar { padding:32px 0 0; }
+    .search-bar { display:flex; gap:10px; background:var(--surface); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-lg); padding:8px 8px 8px 16px; align-items:center; margin-bottom:20px; }
+    .search-bar input { flex:1; background:transparent; border:none; color:var(--text); font-family:'Inter',sans-serif; font-size:15px; outline:none; }
+    .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+    .filter-chip { padding:6px 14px; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; border:1px solid rgba(255,255,255,0.1); background:var(--surface); color:var(--text-muted); transition:all .15s; }
+    .filter-chip:hover,.filter-chip.active { background:var(--green-dark); color:#fff; border-color:var(--green-dark); }
+    .section-label { font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+
+    /* PERFIL */
+    #page-perfil { padding:40px 0; }
+    .perfil-header { background:var(--surface); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:28px; display:flex; align-items:center; gap:24px; margin-bottom:24px; }
+    .perfil-info h2 { font-size:22px; font-weight:700; margin-bottom:4px; }
+    .perfil-info p { color:var(--text-muted); font-size:14px; }
+    .perfil-stats { display:flex; gap:24px; margin-top:12px; }
+    .perfil-stat-num { font-size:20px; font-weight:700; color:#4CAF50; }
+    .perfil-stat-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.4px; }
+    .perfil-form-card { background:var(--surface); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:24px; }
+    .perfil-form-card h3 { font-size:16px; font-weight:600; margin-bottom:20px; }
+
+    /* CHATS */
+    #page-chats { padding:32px 0; }
+    .chats-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; height:560px; }
+    .chat-list { background:var(--surface); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); overflow:hidden; }
+    .chat-list-header { padding:16px; border-bottom:1px solid rgba(255,255,255,0.06); font-weight:600; font-size:15px; }
+    .chat-item { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .1s; }
+    .chat-item:hover,.chat-item.active { background:var(--surface2); }
+    .chat-item-info { flex:1; min-width:0; }
+    .chat-item-name { font-size:14px; font-weight:600; }
+    .chat-item-msg { font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+    .chat-item-time { font-size:11px; color:var(--text-muted); }
+    .chat-unread { background:#4CAF50; color:#fff; font-size:11px; font-weight:700; border-radius:10px; padding:2px 6px; }
+    .chat-window { background:var(--surface); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); display:flex; flex-direction:column; overflow:hidden; }
+    .chat-header { padding:16px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:12px; }
+    .chat-messages { flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
+    .msg { max-width:70%; }
+    .msg-text { padding:10px 14px; border-radius:12px; font-size:14px; line-height:1.5; }
+    .msg-recv .msg-text { background:var(--surface2); border-bottom-left-radius:4px; }
+    .msg-sent { align-self:flex-end; }
+    .msg-sent .msg-text { background:var(--green-dark); color:#fff; border-bottom-right-radius:4px; }
+    .msg-time { font-size:11px; color:var(--text-muted); margin-top:4px; }
+    .msg-sent .msg-time { text-align:right; }
+    .chat-input-area { padding:12px 16px; border-top:1px solid rgba(255,255,255,0.06); display:flex; gap:10px; }
+    .chat-input-area input { flex:1; background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:10px 16px; }
+    .chat-empty { flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:14px; }
+
+    /* CONTACTE */
+    #page-contacte { padding:60px 0; }
+    .contacte-inner { max-width:560px; margin:0 auto; }
+    .contacte-inner h1 { font-size:28px; font-weight:700; margin-bottom:8px; }
+    .contacte-inner > p { color:var(--text-muted); margin-bottom:32px; }
+    .contact-card { background:var(--surface); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:28px; }
+
+    /* FAB */
+    .fab { position:fixed; bottom:24px; right:24px; width:52px; height:52px; border-radius:50%; background:var(--green-dark); color:#fff; border:none; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px rgba(26,92,82,0.5); transition:background .2s,transform .15s; z-index:50; }
+    .fab:hover { background:var(--green-mid); transform:scale(1.05); }
+
+    @media(max-width:768px) {
+      .nav-links { display:none; }
+      .grid-3 { grid-template-columns:1fr 1fr; }
+      .chats-layout { grid-template-columns:1fr; grid-template-rows:200px 1fr; }
+      .landing-inner h1 { font-size:30px; }
+      .perfil-header { flex-direction:column; text-align:center; }
+    }
+    @media(max-width:480px) {
+      .grid-3,.grid-2 { grid-template-columns:1fr; }
+    }
+  </style>
 </head>
-
 <body>
 
-    <h1 class="titulo">Zelva Marketplace</h1>
-
-    <div class="container">
-
-        <div class="card" id="loginForm">
-            <h4>Accés a Zelva</h4>
-            <input type="email" id="emailInput" placeholder="Email" class="form-control mb-2">
-            <input type="password" id="passwordInput" placeholder="Contrasenya (mín. 6 caràcters)"
-                class="form-control mb-2">
-            <button id="btnLogin" class="btn btn-main w-100 mb-2">Entrar</button>
-            <button id="btnRegistro" class="btn btn-outline-secondary w-100">Registrar-se</button>
-        </div>
-
-        <div class="card" id="profileForm">
-            <h4>El teu Perfil</h4>
-            <p id="userEmailDisplay" class="text-muted"></p>
-            <input type="text" placeholder="Nom" class="form-control mb-2">
-            <input type="text" placeholder="Localització" class="form-control mb-2">
-            <input type="number" placeholder="EcoPoints" class="form-control mb-2">
-            <button id="btnLogout" class="btn btn-danger btn-sm">Tancar sessió</button>
-        </div>
-
-        <div class="card">
-            <h4>Nou anunci</h4>
-            <input type="text" placeholder="Títol" class="form-control mb-2">
-            <textarea placeholder="Descripció" class="form-control mb-2"></textarea>
-            <select class="form-control mb-2">
-                <option>Categoria</option>
-                <option>Roba</option>
-                <option>Electrònica</option>
-                <option>Llar</option>
-            </select>
-            <select class="form-control mb-2">
-                <option>Estat</option>
-                <option>Nou</option>
-                <option>Bon estat</option>
-            </select>
-            <select class="form-control mb-2">
-                <option>Modalitat</option>
-                <option>Intercanvi</option>
-                <option>Donació</option>
-                <option>Punts</option>
-            </select>
-            <input type="file" multiple class="form-control mb-2">
-            <button class="btn btn-main">Guardar anunci</button>
-        </div>
-
-        <div class="card">
-            <h4>Anuncis recents</h4>
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Títol</th>
-                        <th>Modalitat</th>
-                        <th>Accions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Bicicleta</td>
-                        <td>Intercanvi</td>
-                        <td><button class="btn btn-sm btn-main">Veure</button></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
+  <!-- NAV logat -->
+  <nav id="navbar" class="hidden">
+    <div class="logo" onclick="navigate('explorar')">
+      <div class="logo-icon">Z</div>
+      <span class="logo-text">Zel<span>va</span></span>
     </div>
+    <ul class="nav-links">
+      <li><a onclick="navigate('explorar')" id="nav-explorar">Explorar</a></li>
+      <li><a onclick="navigate('chats')" id="nav-chats">Missatges</a></li>
+      <li><a onclick="navigate('contacte')" id="nav-contacte">Contacta'ns</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="ecopoints">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#4CAF50" stroke-width="2"/><path d="M8 12h8M12 8l4 4-4 4" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="nav-points">0</span> pts
+      </div>
+      <div class="nav-avatar" id="nav-avatar-btn" onclick="navigate('perfil')">?</div>
+    </div>
+  </nav>
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <!-- NAV guest -->
+  <nav id="navbar-guest">
+    <div class="logo" onclick="navigate('landing')">
+      <div class="logo-icon">Z</div>
+      <span class="logo-text">Zel<span>va</span></span>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-outline btn-sm" onclick="navigate('login')">Entrar</button>
+      <button class="btn btn-primary btn-sm" onclick="navigate('login')">Registrar-se</button>
+    </div>
+  </nav>
 
-    <script>
-        // CONFIGURACIÓN DE TU PROYECTO (Copia esto de tu consola de Firebase)
-        const firebaseConfig = {
-            apiKey: "AIzaSyD5nxim_X1c0cVXRji8-k4CkMSDPDH7v0k",
-            authDomain: "zelva-c6143.firebaseapp.com",
-            projectId: "zelva-c6143",
-            storageBucket: "zelva-c6143.firebasestorage.app",
-            messagingSenderId: "876429015791",
-            appId: "1:876429015791:web:02770e67c5ce81c335391a"
-        };
+  <!-- LANDING -->
+  <div id="page-landing">
+    <div class="landing-inner">
+      <div class="landing-badge">♻ Marketplace sostenible</div>
+      <h1>Intercanvia el que<br>no uses. <span>Redueix.</span></h1>
+      <p>Zelva és una plataforma on pots donar, intercanviar o cedir objectes a persones properes. Sense diners, sense residus.</p>
+      <div class="landing-actions">
+        <button class="btn btn-primary" onclick="navigate('login')" style="padding:12px 28px;font-size:15px">Comença ara</button>
+        <button class="btn btn-outline" onclick="navigate('login')" style="padding:12px 24px;font-size:15px">Veure anuncis</button>
+      </div>
+      <div class="landing-stats">
+        <div><div class="stat-num">1.2k</div><div class="stat-label">Usuaris</div></div>
+        <div><div class="stat-num">340</div><div class="stat-label">Anuncis actius</div></div>
+        <div><div class="stat-num">820</div><div class="stat-label">Intercanvis</div></div>
+      </div>
+    </div>
+  </div>
 
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
+  <!-- LOGIN -->
+  <div id="page-login" class="hidden">
+    <div class="auth-box">
+      <div style="text-align:center;margin-bottom:28px">
+        <span class="logo-text">Zel<span style="color:#4CAF50">va</span></span>
+      </div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Entrar</div>
+        <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Registrar-se</div>
+      </div>
+      <div id="auth-alert" class="hidden"></div>
+      <div id="form-login">
+        <div class="form-group">
+          <label>Correu electrònic</label>
+          <input type="email" id="loginEmail" placeholder="hola@exemple.com">
+        </div>
+        <div class="form-group">
+          <label>Contrasenya</label>
+          <input type="password" id="loginPass" placeholder="Mínim 6 caràcters">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="doLogin()">Entrar</button>
+        <p class="forgot" onclick="doForgot()">He oblidat la contrasenya</p>
+      </div>
+      <div id="form-register" class="hidden">
+        <div class="form-group">
+          <label>Correu electrònic</label>
+          <input type="email" id="regEmail" placeholder="hola@exemple.com">
+        </div>
+        <div class="form-group">
+          <label>Contrasenya</label>
+          <input type="password" id="regPass" placeholder="Mínim 6 caràcters">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="doRegister()">Crear compte</button>
+      </div>
+      <div class="auth-divider">o</div>
+      <button class="btn btn-google" onclick="doGoogleLogin()">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continua amb Google
+      </button>
+    </div>
+  </div>
 
-        // Referencias a los elementos
-        const loginForm = document.getElementById('loginForm');
-        const profileForm = document.getElementById('profileForm');
-        const userEmailDisplay = document.getElementById('userEmailDisplay');
+  <!-- EXPLORAR -->
+  <div id="page-explorar" class="hidden">
+    <div class="container" style="padding-top:32px">
+      <div class="search-bar">
+        <svg width="16" height="16" fill="none" stroke="#9E9E9E" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Cerca roba, electrònica, mobles...">
+        <button class="btn btn-primary btn-sm">Cercar</button>
+      </div>
+      <div class="filters">
+        <div class="filter-chip active">Tots</div>
+        <div class="filter-chip">Roba</div>
+        <div class="filter-chip">Electrònica</div>
+        <div class="filter-chip">Llar</div>
+        <div class="filter-chip">Llibres</div>
+        <div class="filter-chip">Esports</div>
+        <div class="filter-chip">Joguines</div>
+        <div class="filter-chip">Intercanvi</div>
+        <div class="filter-chip">Donació</div>
+      </div>
+      <p class="section-label" id="anuncis-count">6 anuncis disponibles</p>
+      <div class="grid-3" id="anuncis-grid"></div>
+    </div>
+    <button class="fab" onclick="alert('Proximament: publicar anunci!')">+</button>
+  </div>
 
-        // REGISTRO
-        document.getElementById('btnRegistro').addEventListener('click', () => {
-            const email = document.getElementById('emailInput').value;
-            const pass = document.getElementById('passwordInput').value;
+  <!-- PERFIL -->
+  <div id="page-perfil" class="hidden">
+    <div class="container">
+      <div class="perfil-header">
+        <div class="avatar-lg" id="perfil-avatar">?</div>
+        <div class="perfil-info">
+          <h2 id="perfil-nom">Usuari</h2>
+          <p id="perfil-email">correu@exemple.com</p>
+          <div class="perfil-stats">
+            <div><div class="perfil-stat-num" id="perfil-points">0</div><div class="perfil-stat-label">EcoPoints</div></div>
+            <div><div class="perfil-stat-num">0</div><div class="perfil-stat-label">Intercanvis</div></div>
+            <div><div class="perfil-stat-num">—</div><div class="perfil-stat-label">Valoració</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="perfil-form-card">
+        <h3>Editar perfil</h3>
+        <div class="grid-2">
+          <div class="form-group"><label>Nom</label><input type="text" id="perfil-input-nom" placeholder="El teu nom"></div>
+          <div class="form-group"><label>Cognoms</label><input type="text" placeholder="Els teus cognoms"></div>
+          <div class="form-group"><label>Telèfon</label><input type="tel" placeholder="6XX XXX XXX"></div>
+          <div class="form-group"><label>Localitat</label><input type="text" placeholder="Ex: Mataró"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="alert('Proximament: guardar canvis!')">Guardar canvis</button>
+          <button class="btn btn-danger" onclick="doLogout()">Tancar sessió</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            firebase.auth().createUserWithEmailAndPassword(email, pass)
-                .then(() => alert("Compte creat amb èxit!"))
-                .catch(error => alert("Error: " + error.message));
-        });
+  <!-- CHATS -->
+  <div id="page-chats" class="hidden">
+    <div class="container">
+      <div class="chats-layout">
+        <div class="chat-list">
+          <div class="chat-list-header">Missatges</div>
+          <div class="chat-item active" onclick="openChat(this,'Marc R.','MR','Bici de muntanya')">
+            <div class="avatar-sm">MR</div>
+            <div class="chat-item-info"><div class="chat-item-name">Marc R.</div><div class="chat-item-msg">T'interessa la bici?</div></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="chat-item-time">12:30</div><div class="chat-unread">2</div></div>
+          </div>
+          <div class="chat-item" onclick="openChat(this,'Anna C.','AC','Llibres ESO')">
+            <div class="avatar-sm">AC</div>
+            <div class="chat-item-info"><div class="chat-item-name">Anna C.</div><div class="chat-item-msg">Gràcies pels llibres!</div></div>
+            <div class="chat-item-time">Ahir</div>
+          </div>
+          <div class="chat-item" onclick="openChat(this,'Jordi G.','JG','Patins')">
+            <div class="avatar-sm">JG</div>
+            <div class="chat-item-info"><div class="chat-item-name">Jordi G.</div><div class="chat-item-msg">Podem quedar dimecres?</div></div>
+            <div class="chat-item-time">Dl</div>
+          </div>
+        </div>
+        <div class="chat-window">
+          <div class="chat-header hidden" id="chat-header">
+            <div class="avatar-sm" id="chat-avatar">MR</div>
+            <div><div style="font-weight:600;font-size:14px" id="chat-name">Marc R.</div><div style="font-size:12px;color:var(--text-muted)" id="chat-anunci">Bici de muntanya</div></div>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-empty" id="chat-empty">Selecciona una conversa</div>
+          </div>
+          <div class="chat-input-area hidden" id="chat-input-area">
+            <input type="text" placeholder="Escriu un missatge..." id="msg-input">
+            <button class="btn btn-primary btn-sm" onclick="sendMsg()">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // LOGIN
-        document.getElementById('btnLogin').addEventListener('click', () => {
-            const email = document.getElementById('emailInput').value;
-            const pass = document.getElementById('passwordInput').value;
+  <!-- CONTACTE -->
+  <div id="page-contacte" class="hidden">
+    <div class="container">
+      <div class="contacte-inner">
+        <h1>Contacta'ns</h1>
+        <p>Tens alguna pregunta o suggeriment? Escriu-nos i t'ajudem.</p>
+        <div class="contact-card">
+          <div class="form-group"><label>Nom</label><input type="text" placeholder="El teu nom"></div>
+          <div class="form-group"><label>Correu electrònic</label><input type="email" placeholder="hola@exemple.com"></div>
+          <div class="form-group">
+            <label>Assumpte</label>
+            <select><option>Problema tècnic</option><option>Suggeriment</option><option>Denunciar anunci</option><option>Altres</option></select>
+          </div>
+          <div class="form-group"><label>Missatge</label><textarea rows="5" placeholder="Explica'ns el teu dubte..."></textarea></div>
+          <button class="btn btn-primary" onclick="alert('Missatge enviat! Gràcies.')">Enviar missatge</button>
+          <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06)">
+            <p style="font-size:13px;color:var(--text-muted)">O contacta'ns directament:</p>
+            <p style="font-size:14px;margin-top:6px">✉️ zelva.marketplace@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            firebase.auth().signInWithEmailAndPassword(email, pass)
-                .catch(error => alert("Error al entrar: " + error.message));
-        });
+  <!-- FOOTER -->
+  <footer id="footer" class="hidden">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">Zel<span style="color:#4CAF50">va</span></span>
+        <p>Marketplace d'intercanvi sostenible. Intercanvia el que no uses.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Navegació</h4>
+        <a onclick="navigate('explorar')">Explorar</a>
+        <a onclick="navigate('chats')">Missatges</a>
+        <a onclick="navigate('perfil')">El meu perfil</a>
+      </div>
+      <div class="footer-links">
+        <h4>Empresa</h4>
+        <a onclick="navigate('contacte')">Contacta'ns</a>
+        <a>Política de privacitat</a>
+        <a>Termes d'ús</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Zelva, S.L. Tots els drets reservats.</span>
+      <span>Fet amb ♻ per Paula, Enric, Pol i Joel</span>
+    </div>
+  </footer>
 
-        // LOGOUT
-        document.getElementById('btnLogout').addEventListener('click', () => {
-            firebase.auth().signOut();
-        });
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey:"AIzaSyD5nxim_X1c0cVXRji8-k4CkMSDPDH7v0k",
+      authDomain:"zelva-c6143.firebaseapp.com",
+      projectId:"zelva-c6143",
+      storageBucket:"zelva-c6143.firebasestorage.app",
+      messagingSenderId:"876429015791",
+      appId:"1:876429015791:web:02770e67c5ce81c335391a"
+    });
 
-        // OBSERVADOR DE ESTADO (Detecta si el usuario entra o sale)
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                // Usuario logueado
-                loginForm.style.display = 'none';
-                profileForm.style.display = 'block';
-                userEmailDisplay.innerText = "Sessió iniciada com a: " + user.email;
-            } else {
-                // Usuario deslogueado
-                loginForm.style.display = 'block';
-                profileForm.style.display = 'none';
-            }
-        });
-    </script>
+    const pages = ['landing','login','explorar','perfil','chats','contacte'];
 
+    function navigate(page) {
+      pages.forEach(p => document.getElementById('page-'+p)?.classList.add('hidden'));
+      document.getElementById('page-'+page)?.classList.remove('hidden');
+      ['explorar','chats','contacte'].forEach(p => {
+        document.getElementById('nav-'+p)?.classList.toggle('active', p===page);
+      });
+      window.scrollTo(0,0);
+    }
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('navbar').classList.remove('hidden');
+        document.getElementById('navbar-guest').classList.add('hidden');
+        document.getElementById('footer').classList.remove('hidden');
+        const ini = (user.displayName||user.email||'?').slice(0,2).toUpperCase();
+        document.getElementById('nav-avatar-btn').textContent = ini;
+        document.getElementById('perfil-avatar').textContent = ini;
+        document.getElementById('perfil-nom').textContent = user.displayName||'Usuari';
+        document.getElementById('perfil-email').textContent = user.email;
+        document.getElementById('perfil-input-nom').value = user.displayName||'';
+        renderAnuncis();
+        navigate('explorar');
+      } else {
+        document.getElementById('navbar').classList.add('hidden');
+        document.getElementById('navbar-guest').classList.remove('hidden');
+        document.getElementById('footer').classList.add('hidden');
+        navigate('landing');
+      }
+    });
+
+    function switchTab(tab) {
+      document.getElementById('tab-login').classList.toggle('active', tab==='login');
+      document.getElementById('tab-register').classList.toggle('active', tab==='register');
+      document.getElementById('form-login').classList.toggle('hidden', tab!=='login');
+      document.getElementById('form-register').classList.toggle('hidden', tab!=='register');
+      hideAlert();
+    }
+
+    function showAlert(msg, type='error') {
+      const el = document.getElementById('auth-alert');
+      el.className = 'alert alert-'+type;
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+    function hideAlert() { document.getElementById('auth-alert').classList.add('hidden'); }
+
+    function doLogin() {
+      const email = document.getElementById('loginEmail').value;
+      const pass  = document.getElementById('loginPass').value;
+      if (!email||!pass) return showAlert('Omple tots els camps.');
+      firebase.auth().signInWithEmailAndPassword(email,pass)
+        .catch(e => showAlert(tradError(e.code)));
+    }
+
+    function doRegister() {
+      const email = document.getElementById('regEmail').value;
+      const pass  = document.getElementById('regPass').value;
+      if (!email||!pass) return showAlert('Omple tots els camps.');
+      if (pass.length<6) return showAlert('La contrasenya ha de tenir mínim 6 caràcters.');
+      firebase.auth().createUserWithEmailAndPassword(email,pass)
+        .then(() => showAlert('Compte creat!','success'))
+        .catch(e => showAlert(tradError(e.code)));
+    }
+
+    function doGoogleLogin() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .catch(e => showAlert(tradError(e.code)));
+    }
+
+    function doForgot() {
+      const email = document.getElementById('loginEmail').value;
+      if (!email) return showAlert('Introdueix el teu correu primer.');
+      firebase.auth().sendPasswordResetEmail(email)
+        .then(() => showAlert('Correu de recuperació enviat!','success'))
+        .catch(e => showAlert(tradError(e.code)));
+    }
+
+    function doLogout() { firebase.auth().signOut(); }
+
+    function tradError(code) {
+      const e = {
+        'auth/user-not-found':'Usuari no trobat.',
+        'auth/wrong-password':'Contrasenya incorrecta.',
+        'auth/invalid-credential':'Credencials incorrectes.',
+        'auth/email-already-in-use':'Aquest correu ja està registrat.',
+        'auth/invalid-email':'Correu no vàlid.',
+        'auth/weak-password':'Contrasenya massa feble.',
+        'auth/popup-closed-by-user':'Popup tancat.',
+      };
+      return e[code]||'Error inesperat.';
+    }
+
+    // Filtres
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+
+    // Anuncis demo
+    const anuncisDemo = [
+      {emoji:'👟',titol:'Sabates Nike talla 42',desc:'Quasi noves, portades 3 vegades.',mod:'intercanvi',estat:'bon-estat',user:'MR',nom:'Marc R.',loc:'Mataró',punts:'Intercanvi'},
+      {emoji:'📱',titol:'iPhone 11 (esquerda mín.)',desc:'Funciona perfectament, bateria 87%.',mod:'punts',estat:'bon-estat',user:'LP',nom:'Laura P.',loc:'Argentona',punts:'120 pts'},
+      {emoji:'📚',titol:'Lot de llibres ESO',desc:'Matemàtiques, Física i Història 2022.',mod:'donacio',estat:'nou',user:'AC',nom:'Anna C.',loc:'Premià de Mar',punts:'Gratis'},
+      {emoji:'🚲',titol:'Bicicleta de muntanya 26"',desc:'BTT en bon estat, Shimano 21v.',mod:'intercanvi',estat:'bon-estat',user:'JG',nom:'Jordi G.',loc:'Mataró',punts:'Intercanvi'},
+      {emoji:'🪴',titol:'Plantes d\'interior variades',desc:'Pothos, sansevieria i planta de la pau.',mod:'donacio',estat:'',user:'MV',nom:'Mireia V.',loc:'Vilassar de Mar',punts:'Gratis'},
+      {emoji:'🎮',titol:'Jocs PS4 (3 unitats)',desc:'FIFA 23, Spider-Man, GTA V. Precintats.',mod:'punts',estat:'nou',user:'PH',nom:'Pol H.',loc:'Arenys de Munt',punts:'80 pts'},
+    ];
+
+    function renderAnuncis() {
+      const grid = document.getElementById('anuncis-grid');
+      if (!grid) return;
+      const modLabel = {intercanvi:'Intercanvi',donacio:'Donació',punts:'Punts'};
+      grid.innerHTML = anuncisDemo.map(a => `
+        <div class="card">
+          <div class="card-img">${a.emoji}</div>
+          <div class="card-body">
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <span class="tag tag-${a.mod}">${modLabel[a.mod]}</span>
+              ${a.estat?`<span class="tag tag-estat">${a.estat==='nou'?'Nou':'Bon estat'}</span>`:''}
+            </div>
+            <div class="card-title">${a.titol}</div>
+            <div class="card-desc">${a.desc}</div>
+            <div class="card-footer">
+              <div style="display:flex;align-items:center;gap:6px">
+                <div class="avatar-sm">${a.user}</div>
+                <span style="font-size:12px;color:var(--text-muted)">${a.nom}</span>
+              </div>
+              <span class="card-points">${a.punts}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px">📍 ${a.loc}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Chat demo
+    const chatMsgs = {
+      'Marc R.':[
+        {text:"Hola! T'interessa la bici?",sent:false,time:'12:20'},
+        {text:'Sí! Quant val en punts?',sent:true,time:'12:25'},
+        {text:"Uns 200 punts o intercanvi per electrònica",sent:false,time:'12:28'},
+        {text:"T'interessa un iPhone 11?",sent:true,time:'12:30'},
+      ],
+      'Anna C.':[
+        {text:'Gràcies pels llibres! Han estat molt útils',sent:false,time:'Ahir'},
+        {text:'De res! Me n\'alegro 😊',sent:true,time:'Ahir'},
+      ],
+      'Jordi G.':[
+        {text:'Podem quedar dimecres a les 17h?',sent:false,time:'Dl'},
+      ],
+    };
+
+    function openChat(el, name, initials, anunci) {
+      document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('chat-header').classList.remove('hidden');
+      document.getElementById('chat-input-area').classList.remove('hidden');
+      document.getElementById('chat-name').textContent = name;
+      document.getElementById('chat-avatar').textContent = initials;
+      document.getElementById('chat-anunci').textContent = anunci;
+      const msgs = chatMsgs[name]||[];
+      document.getElementById('chat-messages').innerHTML = msgs.map(m => `
+        <div class="msg ${m.sent?'msg-sent':'msg-recv'}">
+          <div class="msg-text">${m.text}</div>
+          <div class="msg-time">${m.time}</div>
+        </div>
+      `).join('');
+    }
+
+    function sendMsg() {
+      const input = document.getElementById('msg-input');
+      const text = input.value.trim();
+      if (!text) return;
+      const msgs = document.getElementById('chat-messages');
+      msgs.innerHTML += `<div class="msg msg-sent"><div class="msg-text">${text}</div><div class="msg-time">Ara</div></div>`;
+      input.value = '';
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    document.getElementById('msg-input')?.addEventListener('keydown', e => {
+      if (e.key==='Enter') sendMsg();
+    });
+
+    // obrir primer chat per defecte
+    document.querySelector('.chat-item')?.click();
+  </script>
 </body>
-
 </html>
