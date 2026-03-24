@@ -725,10 +725,10 @@ function enviarContacte() {
   btn.disabled = true;
 
   emailjs.send('service_drvu5mg', 'template_qtkds4p', {
-    from_name: nom,
-    from_email: email,
-    subject: assumpte,
-    message: missatge
+     name: nom,
+  email: email,
+  title: assumpte,
+  message: missatge
   }).then(() => {
     alertEl.className = 'alert alert-success';
     alertEl.textContent = 'Missatge enviat correctament! Et respondrem aviat.';
