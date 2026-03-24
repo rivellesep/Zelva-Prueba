@@ -482,7 +482,7 @@
         <div class="form-group">
           <label>Estat del producte *</label>
           <select id="anunci-estat-prod">
-            <option value="nou">Nou</option>
+            <option value="Per estrenar">Nou</option>
             <option value="bon-estat">Bon estat</option>
             <option value="usat">Usat</option>
           </select>
@@ -1032,6 +1032,7 @@
         }).join('');
       } catch(e) {
         grid.innerHTML = '<p style="color:var(--text-muted);font-size:14px">Error carregant.</p>';
+        console.error(e);
       }
     }
 
