@@ -1263,8 +1263,9 @@
           </div>`;
         }).join('');
       } catch(e){ 
-        grid.innerHTML='<p style="color:var(--text-muted);font-size:14px">Error carregant historial.</p>'; }
+        grid.innerHTML='<p style="color:var(--text-muted);font-size:14px">Error carregant historial.</p>';
         console.error(e);
+      }
     }
 
     // ═══════════════════════════════════════════════════════
