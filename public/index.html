@@ -643,7 +643,6 @@
         document.getElementById('navbar-guest').classList.add('hidden');
         document.getElementById('footer').classList.remove('hidden');
         await carregarDadesPerfil(user);
-        carregarEstadistiques();
         renderAnuncis();
         navigate('explorar');
       } else {
@@ -1263,7 +1262,9 @@
             <div class="compra-item-punts ${esCompra?'gastat':'guanyat'}">${esCompra?'':'+'}${t.punts||0} pts</div>
           </div>`;
         }).join('');
-      } catch(e){ grid.innerHTML='<p style="color:var(--text-muted);font-size:14px">Error carregant historial.</p>'; }
+      } catch(e){ 
+        grid.innerHTML='<p style="color:var(--text-muted);font-size:14px">Error carregant historial.</p>'; }
+        console.error(e);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -1477,6 +1478,7 @@
         .then(()=>{ alertEl.className='alert alert-success'; alertEl.textContent='Missatge enviat correctament! ✅'; alertEl.classList.remove('hidden'); document.getElementById('c-nom').value=''; document.getElementById('c-email').value=''; document.getElementById('c-missatge').value=''; btn.textContent='Enviar missatge'; btn.disabled=false; })
         .catch(err=>{ console.error(err); alertEl.className='alert alert-error'; alertEl.textContent='Error enviant. Torna-ho a intentar.'; alertEl.classList.remove('hidden'); btn.textContent='Enviar missatge'; btn.disabled=false; });
     }
+    carregarEstadistiques();
   </script>
 </body>
 </html>
