@@ -449,7 +449,7 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 Zelva, S.L. Tots els drets reservats.</span>
-      <span>Fet amb ♻ per Paula, Enric, Pol i Joel</span>
+      <span>Fet per Paula , Enric, Pol i Joel</span>
     </div>
   </footer>
 
@@ -575,9 +575,8 @@
             document.getElementById('perfil-input-telefon').value     = d.telefon || '';
             document.getElementById('perfil-input-localitat').value   = d.localitat || '';
           }
-        } catch(e) { console.error('Error carregant perfil:', e); }
+        } catch(e) { console.error('Error carregant perfil:', e); 
 
-        carregarEstadistiques();
         renderAnuncis();
         navigate('explorar');
       } else {
@@ -1261,6 +1260,7 @@
         btn.disabled = false;
       });
     }
+    carregarEstadistiques();
   </script>
 </body>
 </html>
