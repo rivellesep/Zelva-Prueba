@@ -20,7 +20,10 @@
     </div>
     <ul class="nav-links">
       <li><a onclick="navigate('explorar')" id="nav-explorar">Explorar</a></li>
-      <li><a onclick="navigate('chats')" id="nav-chats">Missatges</a></li>
+      <li style="position:relative">
+        <a onclick="navigate('chats')" id="nav-chats">Missatges</a>
+        <span id="nav-msg-badge" style="display:none;position:absolute;top:-5px;right:-8px;background:#e53935;color:#fff;font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;"></span>
+      </li>
       <li><a onclick="navigate('contacte')" id="nav-contacte">Contacta'ns</a></li>
     </ul>
     <div class="nav-right">
@@ -365,8 +368,12 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button class="btn btn-primary" id="btn-publicar" onclick="publicarAnunci()">Publicar</button>
-        <button class="btn btn-outline"
-          onclick="document.getElementById('modal-anunci').classList.add('hidden')">Cancel·lar</button>
+        <button class="btn btn-outline" onclick="
+          document.getElementById('modal-anunci').classList.add('hidden');
+          imatgesModal = [];
+          document.getElementById('preview-grid-modal').innerHTML = '';
+          document.getElementById('anunci-imatges-modal').value = '';
+          ">Cancel·lar</button>
       </div>
     </div>
   </div>
@@ -390,7 +397,7 @@
   <!-- ═══════════ MODAL CONFIRMAR ENTREGA (propietari) ═══════════ -->
   <div id="modal-entrega" class="modal-overlay hidden">
     <div class="modal-box">
-      <div class="modal-compra-icon">📦</div>
+      <div class="modal-compra-icon">foto</div>
       <h3 style="text-align:center">Confirmar entrega</h3>
       <p style="font-size:14px;color:var(--text-muted);text-align:center;margin-bottom:20px">
         Confirmes que has entregat el producte al comprador? Això tancarà l'intercanvi i rebrà els EcoPoints.

@@ -70,9 +70,27 @@ auth.onAuthStateChanged(user => {
                 // Inputs
                 document.getElementById('perfil-input-nom').value = d.nom || '';
                 document.getElementById('perfil-input-cognom').value = d.cognom || '';
+                if (d.foto) {
+                    document.getElementById('perfil-avatar').innerHTML = `<img src="${d.foto}" alt="foto">`;
+                    document.getElementById('nav-avatar-btn').innerHTML = `<img src="${d.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                }
             }
         });
-
+        // Badge missatges no llegits
+        db.collection('missatges')
+            .where('id_receptor', '==', user.uid)
+            .where('llegit', '==', false)
+            .onSnapshot(snap => {
+                const badge = document.getElementById('nav-msg-badge');
+                if (!badge) return;
+                const count = snap.size;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+        });
         renderAnuncis();
         navigate('explorar');
 
@@ -125,12 +143,12 @@ function doRegister() {
         .then(cred => Promise.all([
             db.collection('usuaris').doc(cred.user.uid).set({
                 nom, cognom, localitat, telefon: telefon || null, foto: '',
-                data_creacio: TS(), punts: 100, // 100 pts de benvinguda!
+                data_creacio: TS(), punts: 200, // 100 pts de benvinguda!
                 intercanvis_real: 0, valoracio_mitjana: null
             }),
             cred.user.updateProfile({ displayName: nom })
         ]))
-        .then(() => showAlert('Compte creat! Tens 100 EcoPoints de benvinguda 🎉', 'success'))
+        .then(() => showAlert('Compte creat! Tens 200 EcoPoints de benvinguda 🎉', 'success'))
         .catch(e => showAlert(tradError(e.code)));
 }
 
@@ -681,7 +699,7 @@ async function publicarAnunci() {
     const alertEl = document.getElementById('modal-alert');
     const btn = document.getElementById('btn-publicar');
     const urls = [];
-    for (const file of imatgesSeleccionades) {
+    for (const file of imatgesModal) {
         try { urls.push(await pujarImgBB(file)); } catch (e) { console.warn('Error pujant imatge:', e); }
     }
     if (!titol || !desc) { alertEl.className = 'alert alert-error'; alertEl.textContent = 'El títol i la descripció són obligatoris.'; alertEl.classList.remove('hidden'); return; }
@@ -690,7 +708,7 @@ async function publicarAnunci() {
     try {
         await db.collection('anuncis').add({
             usuari_id: user.uid, titol, descripcio: desc,
-            imatge: [], ecopoints: punts, estat_anunci: 'disponible',
+            imatge: urls, ecopoints: punts, estat_anunci: 'disponible',
             estat_producte: estatProd, data_creacio: TS(), categoria, modalitat
         });
         document.getElementById('modal-anunci').classList.add('hidden');
@@ -699,6 +717,9 @@ async function publicarAnunci() {
         document.getElementById('anunci-punts').value = '0';
         alertEl.classList.add('hidden');
         renderAnuncis();
+        imatgesModal = [];
+        document.getElementById('preview-grid-modal').innerHTML = '';
+        document.getElementById('anunci-imatges-modal').value = '';
     } catch (e) { alertEl.className = 'alert alert-error'; alertEl.textContent = 'Error: ' + e.message; alertEl.classList.remove('hidden'); }
     btn.textContent = 'Publicar'; btn.disabled = false;
 }
@@ -787,7 +808,7 @@ function obrirConversacio(altreUid, nom, ini, anunciId) {
     if (unsubChat) unsubChat();
     const msgsEl = document.getElementById('chat-messages');
     msgsEl.innerHTML = '<div class="loading"><span class="spinner"></span></div>';
-    unsubChat = db.collection('missatges').where('anunci_referencia', '==', anunciId).orderBy('data_enviament', 'asc').onSnapshot(snap => {
+    unsubChat = db.collection('missatges').where('anunci_referencia', '==', anunciId).orderBy('data_enviament', 'asc').onSnapshot(async snap => {
         const el = document.getElementById('chat-messages');
         const msgs = snap.docs.map(d => d.data()).filter(d => (d.id_emissor === user.uid && d.id_receptor === altreUid) || (d.id_emissor === altreUid && d.id_receptor === user.uid));
         if (!msgs.length) { el.innerHTML = '<div class="chat-empty">Comença la conversa!</div>'; return; }
@@ -799,7 +820,10 @@ function obrirConversacio(altreUid, nom, ini, anunciId) {
             return `<div class="msg ${sent ? 'msg-sent' : 'msg-recv'}"><div class="msg-text">${m.contingut}</div><div class="msg-time">${hora}${sent ? (m.llegit ? ' ✓✓' : ' ✓') : ''}</div></div>`;
         }).join('');
         el.scrollTop = el.scrollHeight;
-        snap.docs.forEach(async doc => { const d = doc.data(); if (d.id_receptor === user.uid && !d.llegit) await doc.ref.update({ llegit: true }); });
+        const noLlegits = snap.docs.filter(doc => doc.data().id_receptor === user.uid && !doc.data().llegit);
+        if (noLlegits.length > 0) {
+            await Promise.all(noLlegits.map(doc => doc.ref.update({ llegit: true })));
+        }
     });
 }
 
@@ -951,3 +975,20 @@ function eliminarPreview(i) {
     });
 }
 carregarEstadistiques();
+
+let imatgesModal = [];
+
+function previewImatgesModal(input) {
+  imatgesModal = [...input.files].slice(0, 5);
+  const grid = document.getElementById('preview-grid-modal');
+  grid.innerHTML = '';
+  imatgesModal.forEach((file, i) => {
+    const url = URL.createObjectURL(file);
+    grid.innerHTML += `<div class="img-preview-item"><img src="${url}"><button class="remove-img" onclick="eliminarPreviewModal(${i})">✕</button></div>`;
+  });
+}
+
+function eliminarPreviewModal(i) {
+  imatgesModal.splice(i, 1);
+  previewImatgesModal({ files: imatgesModal });
+}
