@@ -543,19 +543,27 @@ async function confirmarCompra() {
 // ═══════════════════════════════════════════════════════
 async function reservarAnunci(anunciId, venedorId) {
     const user = auth.currentUser; if (!user) return navigate('login');
-    if (!confirm('Vols sol·licitar la reserva d\'aquest anunci? El venedor rebrà un missatge.')) return;
+
+    const objecteOfert = prompt('Quin objecte ofereixes a canvi? (descriu-lo breument)');
+    if (!objecteOfert || !objecteOfert.trim()) return;
+
+    if (!confirm(`Sol·licites la reserva oferint: "${objecteOfert.trim()}". El venedor ho veurà. Continuar?`)) return;
+
     try {
         const snap = await db.collection('anuncis').doc(anunciId).get();
         const a = snap.data();
         await db.collection('anuncis').doc(anunciId).update({
-            estat_anunci: 'reservat', comprador_id: user.uid, data_reserva: TS()
+            estat_anunci: 'reservat',
+            comprador_id: user.uid,
+            objecte_ofert: objecteOfert.trim(),
+            data_reserva: TS()
         });
         await db.collection('missatges').add({
-            contingut: `📌 He sol·licitat la reserva de "${a.titol}". Podem quedar per fer l'intercanvi!`,
+            contingut: `📌 He sol·licitat la reserva de "${a.titol}". T'ofereixo a canvi: "${objecteOfert.trim()}". Podem quedar per fer l'intercanvi!`,
             anunci_referencia: anunciId, id_emissor: user.uid, id_receptor: venedorId,
             entregat: true, llegit: false, data_enviament: TS(), tipus: 'sistema'
         });
-        alert('✅ Reserva sol·licitada! El venedor ha rebut un missatge.');
+        alert('✅ Reserva sol·licitada! El venedor ha rebut un missatge amb el teu objecte ofert.');
         veureDeta(anunciId);
     } catch (e) { alert('Error: ' + e.message); }
 }
