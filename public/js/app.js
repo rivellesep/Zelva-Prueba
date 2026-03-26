@@ -1008,7 +1008,6 @@ function eliminarPreview(i) {
           </div>`;
     });
 }
-carregarEstadistiques();
 
 let imatgesModal = [];
 
