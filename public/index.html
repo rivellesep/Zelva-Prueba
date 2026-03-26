@@ -9,12 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <link rel="stylesheet" href="./styles/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
-
-
   <nav id="navbar" class="hidden">
     <div class="logo" onclick="navigate('explorar')">
       <img src="./images/logo_title.png" width="100" class="logo-dark">
@@ -32,12 +32,12 @@
     </ul>
     <div class="nav-right">
       <label class="eco-switch" title="Mode Eco">
-  <input type="checkbox" id="eco-toggle" onchange="toggleEco(this)">
-  <span class="eco-slider">
-    <span class="eco-knob"></span>
-  </span>
-  <span class="eco-text"></span>
-</label>
+        <input type="checkbox" id="eco-toggle" onchange="toggleEco(this)">
+        <span class="eco-slider">
+          <span class="eco-knob"></span>
+        </span>
+        <span class="eco-text"></span>
+      </label>
       <div class="ecopoints">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="#4CAF50" stroke-width="2" />
@@ -187,7 +187,8 @@
       <div class="perfil-header">
         <input type="file" id="foto-perfil-input" accept="image/*" style="display:none"
           onchange="pujarFotoPerfil(this)">
-        <div class="avatar-lg editable" id="perfil-avatar" onclick="document.getElementById('foto-perfil-input').click()">?</div>
+        <div class="avatar-lg editable" id="perfil-avatar"
+          onclick="document.getElementById('foto-perfil-input').click()">?</div>
         <div class="perfil-info">
           <h2 id="perfil-nom">Usuari</h2>
           <p id="perfil-email">correu@exemple.com</p>

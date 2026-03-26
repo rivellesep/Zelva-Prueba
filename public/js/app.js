@@ -51,7 +51,7 @@ auth.onAuthStateChanged(user => {
 
                 const ini = (d.nom || user.email || '?').slice(0, 2).toUpperCase();
 
-      
+
                 const avatarEl = document.getElementById('perfil-avatar');
                 const navAvatarEl = document.getElementById('nav-avatar-btn');
                 if (!avatarEl.querySelector('img')) {
@@ -64,16 +64,16 @@ auth.onAuthStateChanged(user => {
                 document.getElementById('perfil-email').textContent = user.email;
 
 
-              const disponibles = (d.punts || 0) - (d.punts_bloquejats || 0);
-document.getElementById('nav-points').textContent = disponibles;
-document.getElementById('perfil-points').textContent = disponibles;
+                const disponibles = (d.punts || 0) - (d.punts_bloquejats || 0);
+                document.getElementById('nav-points').textContent = disponibles;
+                document.getElementById('perfil-points').textContent = disponibles;
 
                 document.getElementById('perfil-intercanvis').textContent =
                     d.intercanvis_real || 0;
                 document.getElementById('perfil-valoracio').textContent =
                     d.valoracio_mitjana || '—';
 
-                
+
                 document.getElementById('perfil-input-nom').value = d.nom || '';
                 document.getElementById('perfil-input-cognom').value = d.cognom || '';
                 if (d.foto) {
@@ -82,7 +82,7 @@ document.getElementById('perfil-points').textContent = disponibles;
                 }
             }
         });
-        
+
         db.collection('missatges')
             .where('id_receptor', '==', user.uid)
             .where('llegit', '==', false)
@@ -430,16 +430,16 @@ ${potValorar
             </div>
           </div>`;
 
-       if (user) {
-    db.collection('usuaris').doc(user.uid).get().then(d => {
-        const el = document.getElementById('saldo-live');
-        if (el) {
-            const data = d.exists ? d.data() : {};
-            const disponibles = (data.punts || 0) - (data.punts_bloquejats || 0);
-            el.textContent = disponibles;
+        if (user) {
+            db.collection('usuaris').doc(user.uid).get().then(d => {
+                const el = document.getElementById('saldo-live');
+                if (el) {
+                    const data = d.exists ? d.data() : {};
+                    const disponibles = (data.punts || 0) - (data.punts_bloquejats || 0);
+                    el.textContent = disponibles;
+                }
+            });
         }
-    });
-}
     } catch (e) { content.innerHTML = '<p style="color:var(--text-muted)">Error carregant l\'anunci.</p>'; console.error(e); }
 }
 
@@ -832,7 +832,7 @@ async function carregarHistorial() {
                     const ud = uDoc.data();
                     nomsMap[uid] = (ud.nom || '') + ' ' + (ud.cognom || '').trim();
                 }
-            } catch (e) {}
+            } catch (e) { }
         }));
 
         const totalGuanyat = transaccions.filter(t => t.tipus === 'venda').reduce((acc, t) => acc + (t.punts || 0), 0);
@@ -862,22 +862,22 @@ async function carregarHistorial() {
                 <div class="filter-chip" data-hfil="venda" onclick="filtrarHistorial(this,'venda')">💰 Vendes</div>
                 <div class="filter-chip" data-hfil="intercanvi_acceptat" onclick="filtrarHistorial(this,'intercanvi_acceptat')">🔁 Intercanvis</div>
             </div>`;
-const itemsHtml = transaccions.map(t => {
-    const esCompra = t.tipus === 'compra';
-    const esIntercanvi = t.tipus === 'intercanvi_acceptat';
-    const emoji = esCompra ? '🛒' : esIntercanvi ? '🔁' : '💰';
-    const label = esCompra ? 'Compra' : esIntercanvi ? 'Intercanvi cedit' : 'Venda';
-    const colorClass = esCompra ? 'gastat' : esIntercanvi ? 'neutre' : 'guanyat';
-    const puntsText = esCompra ? `-${Math.abs(t.punts || 0)} pts` : esIntercanvi ? '—' : `+${t.punts || 0} pts`;
-    const data = t.data?.toDate?.()?.toLocaleDateString('ca', { day: '2-digit', month: '2-digit', year: 'numeric' }) || '—';
-    const contrapartNom = t.contrapart_id ? (nomsMap[t.contrapart_id] || 'Usuari desconegut') : null;
-    const contrapartHtml = contrapartNom
-        ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">👤 ${esCompra ? 'Venut per' : esIntercanvi ? 'Amb' : 'Comprat per'}: <strong>${contrapartNom}</strong></div>`
-        : '';
-    const obtingutHtml = (esIntercanvi && t.anunci_obtingut_titol)
-        ? `<div style="font-size:11px;color:#4CAF50;margin-top:2px">📦 A canvi de: <strong>${t.anunci_obtingut_titol}</strong></div>`
-        : '';
-             return `<div class="compra-item" data-htipus="${t.tipus}">
+        const itemsHtml = transaccions.map(t => {
+            const esCompra = t.tipus === 'compra';
+            const esIntercanvi = t.tipus === 'intercanvi_acceptat';
+            const emoji = esCompra ? '🛒' : esIntercanvi ? '🔁' : '💰';
+            const label = esCompra ? 'Compra' : esIntercanvi ? 'Intercanvi cedit' : 'Venda';
+            const colorClass = esCompra ? 'gastat' : esIntercanvi ? 'neutre' : 'guanyat';
+            const puntsText = esCompra ? `-${Math.abs(t.punts || 0)} pts` : esIntercanvi ? '—' : `+${t.punts || 0} pts`;
+            const data = t.data?.toDate?.()?.toLocaleDateString('ca', { day: '2-digit', month: '2-digit', year: 'numeric' }) || '—';
+            const contrapartNom = t.contrapart_id ? (nomsMap[t.contrapart_id] || 'Usuari desconegut') : null;
+            const contrapartHtml = contrapartNom
+                ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">👤 ${esCompra ? 'Venut per' : esIntercanvi ? 'Amb' : 'Comprat per'}: <strong>${contrapartNom}</strong></div>`
+                : '';
+            const obtingutHtml = (esIntercanvi && t.anunci_obtingut_titol)
+                ? `<div style="font-size:11px;color:#4CAF50;margin-top:2px">📦 A canvi de: <strong>${t.anunci_obtingut_titol}</strong></div>`
+                : '';
+            return `<div class="compra-item" data-htipus="${t.tipus}">
         <div style="font-size:24px">${emoji}</div>
         <div class="compra-item-info" style="flex:1;min-width:0">
             <div class="compra-item-titol" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}: ${t.anunci_titol || '—'}</div>
@@ -890,7 +890,7 @@ const itemsHtml = transaccions.map(t => {
             ${t.anunci_id ? `<button class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="veureDeta('${t.anunci_id}')">Veure anunci</button>` : ''}
         </div>
     </div>`;
-}).join('');
+        }).join('');
 
         grid.innerHTML = resumHtml + filtreHtml + `<div id="historial-items">${itemsHtml}</div>`;
 
@@ -966,7 +966,10 @@ async function carregarMeusAnuncis() {
             const a = d.data();
             const estatClass = a.estat_anunci === 'reservat' ? 'tag-reservat' : a.estat_anunci === 'completat' ? 'tag-completat' : 'tag-estat';
             return `<div class="card" onclick="veureDeta('${d.id}')">
-            <div class="card-img">📦${a.estat_anunci === 'reservat' ? '<div class="card-img-badge">Reservat</div>' : ''}</div>
+            <div class="card-img">
+  ${(a.imatge && a.imatge[0]) ? `<img src="${a.imatge[0]}" alt="${a.titol}" onerror="this.parentElement.innerHTML='📦'">` : '📦'}
+  ${a.estat_anunci === 'reservat' ? '<div class="card-img-badge">Reservat</div>' : ''}
+</div>
             <div class="card-body">
               <div style="display:flex;gap:6px;margin-bottom:8px">
                 <span class="tag tag-${a.modalitat}">${modLabel[a.modalitat] || a.modalitat}</span>
@@ -1033,7 +1036,7 @@ async function carregarChats() {
         [...emisSnap.docs, ...recSnap.docs].forEach(doc => {
             const d = doc.data();
             const altreUid = d.id_emissor === user.uid ? d.id_receptor : d.id_emissor;
-            const key = altreUid;
+            const key = altreUid + '_' + (d.anunci_referencia || 'general');
             const ts = d.data_enviament?.toMillis?.() || 0;
             if (d[`eliminat_per_${user.uid}`]) return;
             if (!convMap[key] || ts > convMap[key].ts) convMap[key] = { altreUid, anunciId: d.anunci_referencia, lastMsg: d.contingut, ts, noLlegit: (!d.llegit && d.id_receptor === user.uid) ? 1 : 0 };
@@ -1042,9 +1045,12 @@ async function carregarChats() {
         if (!convList.length) { listEl.innerHTML = '<p style="padding:16px;font-size:13px;color:var(--text-muted)">No tens missatges encara.</p>'; return; }
         listEl.innerHTML = '';
         for (const conv of convList) {
-            let nom = 'Usuari', ini = '?';
+            let nom = 'Usuari', ini = '?', titolProducte = 'Producte';
             try {
-                const uDoc = await db.collection('usuaris').doc(conv.altreUid).get();
+                const [uDoc, aDoc] = await Promise.all([
+                    db.collection('usuaris').doc(conv.altreUid).get(),
+                    conv.anunciId ? db.collection('anuncis').doc(conv.anunciId).get() : Promise.resolve(null)
+                ]);
                 if (uDoc.exists) {
                     const ud = uDoc.data();
                     nom = (ud.nom || '') + ' ' + (ud.cognom || '');
@@ -1052,13 +1058,16 @@ async function carregarChats() {
                         ? `<img src="${ud.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
                         : (ud.nom || '?').slice(0, 2).toUpperCase();
                 }
+                if (aDoc && aDoc.exists) {
+                    titolProducte = aDoc.data().titol || 'Producte';
+                }
             } catch (e) { }
             const item = document.createElement('div');
             item.className = 'chat-item';
             item.innerHTML = `
   <div class="avatar-sm">${ini}</div>
   <div class="chat-item-info">
-    <div class="chat-item-name">${nom}</div>
+    <div class="chat-item-name">${titolProducte}</div>
     <div class="chat-item-msg">${conv.lastMsg || ''}</div>
   </div>
   ${conv.noLlegit ? `<div class="chat-unread">${conv.noLlegit}</div>` : ''}
