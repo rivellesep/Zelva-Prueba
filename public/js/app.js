@@ -209,13 +209,16 @@ function doForgot() {
 function doLogout() { auth.signOut(); }
 
 function tradError(code) {
-    const msgs = {
-        'auth/user-not-found': 'Usuari no trobat.', 'auth/wrong-password': 'Contrasenya incorrecta.',
-        'auth/invalid-credential': 'Credencials incorrectes.', 'auth/email-already-in-use': 'Aquest correu ja està registrat.',
-        'auth/invalid-email': 'Correu no vàlid.', 'auth/weak-password': 'Contrasenya massa feble.',
-        'auth/popup-closed-by-user': 'Popup tancat.'
-    };
-    return msgs[code] || 'Error inesperat.';
+    switch (code) {
+        case 'auth/user-not-found': return 'Aquest usuari no existeix.';
+        case 'auth/wrong-password': return 'Contrasenya incorrecta.';
+        case 'auth/email-already-in-use': return 'Aquest correu electrònic ja està registrat.';
+        case 'auth/invalid-email': return 'El format del correu no és vàlid.';
+        case 'auth/weak-password': return 'La contrasenya és massa feble.';
+        case 'auth/network-request-failed': return 'Error de connexió a internet.';
+        case 'auth/popup-closed-by-user': return 'S\'ha tancat la finestra de Google.';
+        default: return 'S\'ha produït un error: ' + code;
+    }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -543,27 +546,19 @@ async function confirmarCompra() {
 // ═══════════════════════════════════════════════════════
 async function reservarAnunci(anunciId, venedorId) {
     const user = auth.currentUser; if (!user) return navigate('login');
-
-    const objecteOfert = prompt('Quin objecte ofereixes a canvi? (descriu-lo breument)');
-    if (!objecteOfert || !objecteOfert.trim()) return;
-
-    if (!confirm(`Sol·licites la reserva oferint: "${objecteOfert.trim()}". El venedor ho veurà. Continuar?`)) return;
-
+    if (!confirm('Vols sol·licitar la reserva d\'aquest anunci? El venedor rebrà un missatge.')) return;
     try {
         const snap = await db.collection('anuncis').doc(anunciId).get();
         const a = snap.data();
         await db.collection('anuncis').doc(anunciId).update({
-            estat_anunci: 'reservat',
-            comprador_id: user.uid,
-            objecte_ofert: objecteOfert.trim(),
-            data_reserva: TS()
+            estat_anunci: 'reservat', comprador_id: user.uid, data_reserva: TS()
         });
         await db.collection('missatges').add({
-            contingut: `📌 He sol·licitat la reserva de "${a.titol}". T'ofereixo a canvi: "${objecteOfert.trim()}". Podem quedar per fer l'intercanvi!`,
+            contingut: `📌 He sol·licitat la reserva de "${a.titol}". Podem quedar per fer l'intercanvi!`,
             anunci_referencia: anunciId, id_emissor: user.uid, id_receptor: venedorId,
             entregat: true, llegit: false, data_enviament: TS(), tipus: 'sistema'
         });
-        alert('✅ Reserva sol·licitada! El venedor ha rebut un missatge amb el teu objecte ofert.');
+        alert('✅ Reserva sol·licitada! El venedor ha rebut un missatge.');
         veureDeta(anunciId);
     } catch (e) { alert('Error: ' + e.message); }
 }
