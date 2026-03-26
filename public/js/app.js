@@ -13,13 +13,21 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const TS = () => firebase.firestore.FieldValue.serverTimestamp();
 const INC = n => firebase.firestore.FieldValue.increment(n);
+let historialNavegacio = ['explorar'];
 
 // ═══════════════════════════════════════════════════════
 //  NAVEGACIÓ
 // ═══════════════════════════════════════════════════════
-const PAGES = ['landing', 'login', 'explorar', 'perfil', 'chats', 'contacte', 'detall'];
+const PAGES = ['landing', 'login', 'explorar', 'perfil', 'chats', 'contacte', 'detall', 'perfil-public'];
 
-function navigate(page) {
+function navigate(page, guardar = true) {
+    if (guardar) {
+        const actual = PAGES.find(p => !document.getElementById('page-' + p)?.classList.contains('hidden'));
+        if (actual && actual !== page && actual !== 'landing' && actual !== 'login') {
+            historialNavegacio.push(actual);
+            if (historialNavegacio.length > 10) historialNavegacio.shift();
+        }
+    }
     PAGES.forEach(p => document.getElementById('page-' + p)?.classList.add('hidden'));
     document.getElementById('page-' + page)?.classList.remove('hidden');
     ['explorar', 'chats', 'contacte'].forEach(p =>
@@ -28,6 +36,11 @@ function navigate(page) {
     window.scrollTo(0, 0);
     if (page === 'chats') carregarChats();
     if (page === 'perfil') { carregarMeusAnuncis(); carregarHistorial(); }
+}
+
+function tornar() {
+    const anterior = historialNavegacio.pop() || 'explorar';
+    navigate(anterior, false);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -50,11 +63,11 @@ auth.onAuthStateChanged(user => {
 
                 // Avatar
                 const avatarEl = document.getElementById('perfil-avatar');
-const navAvatarEl = document.getElementById('nav-avatar-btn');
-if (!avatarEl.querySelector('img')) {
-  navAvatarEl.textContent = ini;
-  avatarEl.textContent = ini;
-}
+                const navAvatarEl = document.getElementById('nav-avatar-btn');
+                if (!avatarEl.querySelector('img')) {
+                    navAvatarEl.textContent = ini;
+                    avatarEl.textContent = ini;
+                }
 
                 // Nom i email
                 document.getElementById('perfil-nom').textContent =
@@ -94,9 +107,10 @@ if (!avatarEl.querySelector('img')) {
                 } else {
                     badge.style.display = 'none';
                 }
-        });
+            });
         renderAnuncis();
-        navigate('explorar');
+        historialNavegacio = [];
+        navigate('explorar', false);
 
     } else {
 
@@ -105,7 +119,8 @@ if (!avatarEl.querySelector('img')) {
         document.getElementById('navbar-guest').classList.remove('hidden');
         document.getElementById('footer').classList.add('hidden');
 
-        navigate('landing');
+        historialNavegacio = [];
+        navigate('landing', false);
     }
 });
 // ═══════════════════════════════════════════════════════
@@ -318,7 +333,9 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
 //  DETALL ANUNCI
 // ═══════════════════════════════════════════════════════
 async function veureDeta(anunciId) {
-    navigate('detall');
+    const actual = PAGES.find(p => !document.getElementById('page-' + p)?.classList.contains('hidden'));
+if (actual && actual !== 'detall') historialNavegacio.push(actual);
+    navigate('detall', false);
     const content = document.getElementById('detall-content');
     content.innerHTML = '<div class="loading"><span class="spinner"></span>Carregant...</div>';
     try {
@@ -330,11 +347,18 @@ async function veureDeta(anunciId) {
         const a = { id: anunciDoc.id, ...anunciDoc.data() };
         const modLabel = { intercanvi: 'Intercanvi', punts: 'Punts' };
         const user = auth.currentUser;
+        let potValorar = false;
+
+        if (user && a.estat_anunci === 'completat') {
+            if (user.uid === a.comprador_id || user.uid === a.usuari_id) {
+                potValorar = true;
+            }
+        } //valoracions prova   
 
         let nomProp = 'Usuari', locProp = '', iniProp = '?';
         try {
             const uDoc = await db.collection('usuaris').doc(a.usuari_id).get();
-            if (uDoc.exists) { const ud = uDoc.data(); nomProp = (ud.nom || '') + ' ' + (ud.cognom || ''); locProp = ud.localitat || ''; iniProp = (ud.nom || '?').slice(0, 2).toUpperCase(); }
+            if (uDoc.exists) { const ud = uDoc.data(); nomProp = (ud.nom || '') + ' ' + (ud.cognom || ''); locProp = ud.localitat || ''; iniProp = ud.foto ? `<img src="${ud.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (ud.nom || '?').slice(0, 2).toUpperCase(); }
         } catch (e) { }
 
         // Comprova si l'usuari actual ha comprat aquest anunci (estat reservat)
@@ -377,7 +401,7 @@ async function veureDeta(anunciId) {
         // Botó reservar (per intercanvi)
         let reservarBtn = '';
         if (a.modalitat === 'intercanvi' && a.estat_anunci === 'disponible' && esLogat && !esProp) {
-            reservarBtn = `<button class="btn btn-warning" onclick="reservarAnunci('${a.id}','${a.usuari_id}')">📌 Sol·licitar reserva</button>`;
+            reservarBtn = `<button class="btn btn-warning" onclick="seleccionarOferta('${a.id}','${a.usuari_id}')">🔁 Proposar intercanvi</button>`;
         }
         // Botó confirmar entrega (propietari, anunci reservat)
         let entregaBtn = '';
@@ -392,7 +416,19 @@ async function veureDeta(anunciId) {
 
         content.innerHTML = `
           <div class="detall-card">
-            <div class="detall-img">${(a.imatge && a.imatge[0]) ? `<img src="${a.imatge[0]}" alt="${a.titol}">` : '📦'}</div>
+            <div class="detall-img" style="position:relative;overflow:hidden;height:280px">
+  ${(a.imatge && a.imatge.length) ? `
+    <div id="carrusel-imgs" style="display:flex;transition:transform .3s ease;height:100%">
+      ${a.imatge.map(url => `<img src="${url}" style="min-width:100%;height:280px;object-fit:cover">`).join('')}
+    </div>
+    ${a.imatge.length > 1 ? `
+      <button onclick="canviarImatge(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer">‹</button>
+      <button onclick="canviarImatge(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer">›</button>
+      <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px">
+        ${a.imatge.map((_, i) => `<div class="dot-carrusel" id="dot-${i}" style="width:8px;height:8px;border-radius:50%;background:${i === 0 ? '#fff' : 'rgba(255,255,255,0.4)'};cursor:pointer" onclick="anarAImatge(${i})"></div>`).join('')}
+      </div>` : ''}
+  ` : '📦'}
+</div>
             <div class="detall-body">
               ${estatBanner}
               <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
@@ -408,8 +444,8 @@ async function veureDeta(anunciId) {
                 <div class="detall-info-item"><strong>${a.categoria || '—'}</strong>Categoria</div>
               </div>
               <div class="detall-user">
-                <div class="avatar-lg" style="width:44px;height:44px;font-size:16px">${iniProp}</div>
-                <div><div class="detall-user-name">${nomProp}</div><div class="detall-user-loc">📍 ${locProp}</div></div>
+                <div class="avatar-lg" style="width:44px;height:44px;font-size:16px;cursor:pointer" onclick="${user && user.uid === a.usuari_id ? `navegarAPerfil()` : `veurePerfil('${a.usuari_id}')`}">${iniProp}</div>
+                <div><div class="detall-user-name" style="cursor:pointer" onclick="${user && user.uid === a.usuari_id ? `navegarAPerfil()` : `veurePerfil('${a.usuari_id}')`}">${nomProp}</div><div class="detall-user-loc">📍 ${locProp}</div></div>
               </div>
               ${compraBox}
               <div class="detall-actions">
@@ -417,8 +453,12 @@ async function veureDeta(anunciId) {
                 ${entregaBtn}
                 ${cancelBtn}
                 ${esLogat && !esProp && a.estat_anunci !== 'completat' ? `<button class="btn btn-outline" onclick="iniciarXat('${a.id}','${a.usuari_id}')">✉ Enviar missatge</button>` : ''}
-${esLogat && !esProp && a.estat_anunci === 'completat' && !a.valorat ? `<button class="btn btn-outline" onclick="obrirModalValoracio('${a.id}','${a.usuari_id}')">⭐ Valorar</button>` : ''}
-${esLogat && !esProp && a.estat_anunci === 'completat' && a.valorat ? `<button class="btn btn-outline" disabled>⭐ Valorat</button>` : ''}                ${esProp && a.estat_anunci === 'disponible' ? `<button class="btn btn-danger btn-sm" onclick="eliminarAnunci('${a.id}')">Eliminar anunci</button>` : ''}
+${potValorar
+                ? `<button class="btn btn-outline" onclick="obrirModalValoracio('${a.id}','${a.usuari_id}')">⭐ Valorar</button>`
+                : ''}          
+  ${esProp && a.estat_anunci === 'disponible' ? `
+    <button class="btn btn-outline btn-sm" onclick="obrirModalEditar('${a.id}')">✏ Editar</button>
+    <button class="btn btn-danger btn-sm" onclick="eliminarAnunci('${a.id}')">Eliminar anunci</button>` : ''}
               </div>
               <h3 style="font-size:16px;font-weight:600;margin-bottom:16px">Valoracions (${valsSnap.size})</h3>
               ${valsHtml}
@@ -437,7 +477,11 @@ ${esLogat && !esProp && a.estat_anunci === 'completat' && a.valorat ? `<button c
 
 async function eliminarAnunci(id) {
     if (!confirm('Segur que vols eliminar aquest anunci?')) return;
-    try { await db.collection('anuncis').doc(id).update({ estat_anunci: 'completat' }); navigate('explorar'); renderAnuncis(); }
+    try {
+        await db.collection('anuncis').doc(id).update({ estat_anunci: 'completat' }); renderAnuncis();
+        historialNavegacio = [];
+        navigate('explorar', false);
+    }
     catch (e) { alert('Error: ' + e.message); }
 }
 
@@ -540,27 +584,137 @@ async function confirmarCompra() {
         console.error(e);
     }
 }
-
+let ofertaContext = null;
 // ═══════════════════════════════════════════════════════
 //  ★ RESERVAR (intercanvi) ★
 // ═══════════════════════════════════════════════════════
-async function reservarAnunci(anunciId, venedorId) {
-    const user = auth.currentUser; if (!user) return navigate('login');
-    if (!confirm('Vols sol·licitar la reserva d\'aquest anunci? El venedor rebrà un missatge.')) return;
+async function seleccionarOferta(anunciId, venedorId) {
+    const user = auth.currentUser;
+    if (!user) return navigate('login');
+
+    ofertaContext = { anunciId, venedorId };
+
+    const grid = document.getElementById('oferta-grid');
+    grid.innerHTML = '<div class="loading"><span class="spinner"></span></div>';
+    document.getElementById('modal-oferta').classList.remove('hidden');
+
+    const snap = await db.collection('anuncis')
+        .where('usuari_id', '==', user.uid)
+        .where('estat_anunci', '==', 'disponible')
+        .get();
+
+    if (snap.empty) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:20px">
+                <p style="color:var(--text-muted);margin-bottom:16px">No tens cap anunci publicat per oferir.</p>
+                <button class="btn btn-primary btn-sm" onclick="tancarModalOferta();obrirModalAnunci()">+ Publicar anunci primer</button>
+            </div>`;
+        return;
+    }
+
+    grid.innerHTML = snap.docs.map(doc => {
+        const a = doc.data();
+        return `
+        <div class="card" id="oferta-card-${doc.id}" onclick="triarOferta('${doc.id}', '${a.titol.replace(/'/g, "\\'")}')">
+            <div class="card-img">
+                ${(a.imatge && a.imatge[0]) ? `<img src="${a.imatge[0]}">` : '📦'}
+            </div>
+            <div class="card-body">
+                <div class="card-title">${a.titol}</div>
+                <div class="card-desc">${a.descripcio || ''}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+function triarOferta(ofertaId, ofertaTitol) {
+    document.querySelectorAll('[id^="oferta-card-"]').forEach(c => {
+        c.style.borderColor = 'rgba(255,255,255,0.06)';
+        c.style.background = 'var(--surface)';
+    });
+    const card = document.getElementById('oferta-card-' + ofertaId);
+    if (card) {
+        card.style.borderColor = '#4CAF50';
+        card.style.background = 'rgba(26,92,82,0.15)';
+    }
+
+    ofertaContext.ofertaId = ofertaId;
+    ofertaContext.ofertaTitol = ofertaTitol;
+
+    let confirmBtn = document.getElementById('btn-confirmar-oferta');
+    if (!confirmBtn) {
+        confirmBtn = document.createElement('button');
+        confirmBtn.id = 'btn-confirmar-oferta';
+        confirmBtn.className = 'btn btn-primary';
+        // ✅ Inserir al div d'accions, ABANS del botó Cancel·lar
+        const accions = document.getElementById('oferta-accions');
+        accions.prepend(confirmBtn);
+    }
+    const label = ofertaTitol.length > 30 ? ofertaTitol.slice(0, 30) + '...' : ofertaTitol;
+    confirmBtn.textContent = `✓ Oferir "${label}"`;
+    confirmBtn.onclick = () => confirmarOferta(ofertaId, ofertaTitol);
+}
+function tancarModalOferta() {
+    document.getElementById('modal-oferta').classList.add('hidden');
+    const btn = document.getElementById('btn-confirmar-oferta');
+    if (btn) btn.remove();
+    ofertaContext = null;
+}
+async function confirmarOferta(ofertaId, ofertaTitol) {
+    console.log('confirmarOferta cridat', ofertaId, ofertaTitol, ofertaContext);
+    if (!ofertaContext) {
+        alert('Error: no hi ha context d\'oferta.');
+        return;
+    }
+
+    const { anunciId, venedorId } = ofertaContext;
+
+    if (!anunciId || !venedorId) {
+        alert('Error: falten dades (anunciId o venedorId).');
+        return;
+    }
+
     try {
-        const snap = await db.collection('anuncis').doc(anunciId).get();
-        const a = snap.data();
-        await db.collection('anuncis').doc(anunciId).update({
-            estat_anunci: 'reservat', comprador_id: user.uid, data_reserva: TS()
-        });
-        await db.collection('missatges').add({
-            contingut: `📌 He sol·licitat la reserva de "${a.titol}". Podem quedar per fer l'intercanvi!`,
-            anunci_referencia: anunciId, id_emissor: user.uid, id_receptor: venedorId,
-            entregat: true, llegit: false, data_enviament: TS(), tipus: 'sistema'
-        });
-        alert('✅ Reserva sol·licitada! El venedor ha rebut un missatge.');
-        veureDeta(anunciId);
-    } catch (e) { alert('Error: ' + e.message); }
+        await crearIntercanvi(anunciId, venedorId, ofertaId, ofertaTitol);
+        tancarModalOferta();
+    } catch (e) {
+        console.error('Error a confirmarOferta:', e);
+        alert('Error enviant la proposta: ' + e.message);
+    }
+}
+
+async function crearIntercanvi(anunciId, venedorId, ofertaId, ofertaTitol) {
+    const user = auth.currentUser;
+    if (!user) { navigate('login'); return; }
+
+    console.log('crearIntercanvi', { anunciId, venedorId, ofertaId, ofertaTitol, uid: user.uid });
+
+    const anunciDoc = await db.collection('anuncis').doc(anunciId).get();
+    if (!anunciDoc.exists) { alert('Anunci no trobat.'); return; }
+    const a = anunciDoc.data();
+
+    await db.collection('propostes').add({
+        anunci_id: anunciId,
+        venedor_id: venedorId,
+        comprador_id: user.uid,
+        oferta_id: ofertaId,
+        oferta_titol: ofertaTitol,
+        estat: 'pendent',
+        data: TS()
+    });
+
+    await db.collection('missatges').add({
+        contingut: `🔁 Proposta d'intercanvi: "${ofertaTitol}" per "${a.titol}"`,
+        anunci_referencia: anunciId,
+        id_emissor: user.uid,
+        id_receptor: venedorId,
+        tipus: 'proposta',
+        proposta_estat: 'pendent',
+        oferta_id: ofertaId,
+        data_enviament: TS(),
+        llegit: false
+    });
+
+    alert('📨 Proposta enviada!');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -696,16 +850,26 @@ async function carregarHistorial() {
         if (snap.empty) { grid.innerHTML = '<p style="color:var(--text-muted);font-size:14px">Encara no tens transaccions.</p>'; return; }
         grid.innerHTML = snap.docs.map(d => {
             const t = d.data();
-            const esCompra = t.tipus === 'compra';
+          const esCompra = t.tipus === 'compra';
+const esIntercanvi = t.tipus === 'intercanvi_acceptat';
+
+const emoji = esCompra ? '🛒' : esIntercanvi ? '🔁' : '💰';
+const label = esCompra ? 'Compra' : esIntercanvi ? 'Intercanvi' : 'Venda';
+const colorClass = esCompra ? 'gastat' : esIntercanvi ? 'neutre' : 'guanyat'; 
+const puntsText = esCompra 
+    ? `${t.punts || 0} pts` 
+    : esIntercanvi 
+        ? '—' 
+        : `+${t.punts || 0} pts`;
             const data = t.data?.toDate?.()?.toLocaleDateString('ca', { day: '2-digit', month: '2-digit', year: 'numeric' }) || '—';
             return `<div class="compra-item">
-            <div style="font-size:24px">${esCompra ? '🛒' : '💰'}</div>
-            <div class="compra-item-info">
-              <div class="compra-item-titol">${esCompra ? 'Compra' : 'Venda'}: ${t.anunci_titol || '—'}</div>
-              <div class="compra-item-sub">${data}</div>
-            </div>
-            <div class="compra-item-punts ${esCompra ? 'gastat' : 'guanyat'}">${esCompra ? '' : '+'}${t.punts || 0} pts</div>
-          </div>`;
+    <div style="font-size:24px">${emoji}</div>
+    <div class="compra-item-info">
+        <div class="compra-item-titol">${label}: ${t.anunci_titol || '—'}</div>
+        <div class="compra-item-sub">${data}</div>
+    </div>
+    <div class="compra-item-punts ${colorClass}">${puntsText}</div>
+</div>`;
         }).join('');
     } catch (e) {
         grid.innerHTML = '<p style="color:var(--text-muted);font-size:14px">Error carregant historial.</p>';
@@ -728,7 +892,12 @@ async function publicarAnunci() {
     const desc = document.getElementById('anunci-desc').value.trim();
     const modalitat = document.getElementById('anunci-modalitat').value;
     const categoria = document.getElementById('anunci-categoria').value;
-    const punts = parseInt(document.getElementById('anunci-punts').value) || 0;
+    let punts = parseInt(document.getElementById('anunci-punts').value) || 0;
+
+
+    if (modalitat === 'intercanvi') {
+        punts = 0;
+    }
     const estatProd = document.getElementById('anunci-estat-prod').value;
     const alertEl = document.getElementById('modal-alert');
     const btn = document.getElementById('btn-publicar');
@@ -789,6 +958,47 @@ async function carregarMeusAnuncis() {
 }
 
 // ═══════════════════════════════════════════════════════
+//  ELIMINAR CHAT
+// ═══════════════════════════════════════════════════════
+async function eliminarChat(altreUid, anunciId) {
+    const user = auth.currentUser; if (!user) return;
+    if (!confirm('Segur que vols eliminar aquesta conversa? Els missatges desapareixeran només per a tu.')) return;
+    try {
+        const [emisSnap, recSnap] = await Promise.all([
+            db.collection('missatges')
+                .where('id_emissor', '==', user.uid)
+                .where('id_receptor', '==', altreUid)
+                .where('anunci_referencia', '==', anunciId)
+                .get(),
+            db.collection('missatges')
+                .where('id_emissor', '==', altreUid)
+                .where('id_receptor', '==', user.uid)
+                .where('anunci_referencia', '==', anunciId)
+                .get()
+        ]);
+
+        const batch = db.batch();
+        [...emisSnap.docs, ...recSnap.docs].forEach(doc => {
+            batch.update(doc.ref, {
+                [`eliminat_per_${user.uid}`]: true
+            });
+        });
+        await batch.commit();
+
+        // Tancar la conversa oberta si era aquesta
+        if (chatActual?.altreUid === altreUid && chatActual?.anunciId === anunciId) {
+            if (unsubChat) unsubChat();
+            chatActual = null;
+            document.getElementById('chat-header').classList.add('hidden');
+            document.getElementById('chat-input-area').classList.add('hidden');
+            document.getElementById('chat-messages').innerHTML = '';
+        }
+
+        await carregarChats();
+    } catch (e) { alert('Error eliminant el xat: ' + e.message); console.error(e); }
+}
+
+// ═══════════════════════════════════════════════════════
 //  MISSATGERIA
 // ═══════════════════════════════════════════════════════
 let chatActual = null, unsubChat = null;
@@ -806,8 +1016,9 @@ async function carregarChats() {
         [...emisSnap.docs, ...recSnap.docs].forEach(doc => {
             const d = doc.data();
             const altreUid = d.id_emissor === user.uid ? d.id_receptor : d.id_emissor;
-            const key = altreUid + '_' + d.anunci_referencia;
+            const key = altreUid;
             const ts = d.data_enviament?.toMillis?.() || 0;
+            if (d[`eliminat_per_${user.uid}`]) return; // ← afegeix aquesta línia abans
             if (!convMap[key] || ts > convMap[key].ts) convMap[key] = { altreUid, anunciId: d.anunci_referencia, lastMsg: d.contingut, ts, noLlegit: (!d.llegit && d.id_receptor === user.uid) ? 1 : 0 };
         });
         const convList = Object.values(convMap).sort((a, b) => b.ts - a.ts);
@@ -815,16 +1026,28 @@ async function carregarChats() {
         listEl.innerHTML = '';
         for (const conv of convList) {
             let nom = 'Usuari', ini = '?';
-            try { const uDoc = await db.collection('usuaris').doc(conv.altreUid).get(); if (uDoc.exists) { const ud = uDoc.data(); nom = (ud.nom || '') + ' ' + (ud.cognom || ''); ini = (ud.nom || '?').slice(0, 2).toUpperCase(); } } catch (e) { }
+            try {
+                const uDoc = await db.collection('usuaris').doc(conv.altreUid).get();
+                if (uDoc.exists) {
+                    const ud = uDoc.data();
+                    nom = (ud.nom || '') + ' ' + (ud.cognom || '');
+                    ini = ud.foto
+                        ? `<img src="${ud.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+                        : (ud.nom || '?').slice(0, 2).toUpperCase();
+                }
+            } catch (e) { }
             const item = document.createElement('div');
             item.className = 'chat-item';
             item.innerHTML = `
-            <div class="avatar-sm">${ini}</div>
-            <div class="chat-item-info">
-              <div class="chat-item-name">${nom}</div>
-              <div class="chat-item-msg">${conv.lastMsg || ''}</div>
-            </div>
-            ${conv.noLlegit ? `<div class="chat-unread">${conv.noLlegit}</div>` : ''}`;
+  <div class="avatar-sm">${ini}</div>
+  <div class="chat-item-info">
+    <div class="chat-item-name">${nom}</div>
+    <div class="chat-item-msg">${conv.lastMsg || ''}</div>
+  </div>
+  ${conv.noLlegit ? `<div class="chat-unread">${conv.noLlegit}</div>` : ''}
+  <button class="btn-delete-chat" onclick="event.stopPropagation(); eliminarChat('${conv.altreUid}','${conv.anunciId}')" title="Eliminar conversa">
+    <img src="./images/eliminar.png" alt="Eliminar">
+  </button>`;
             item.onclick = () => { document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active')); item.classList.add('active'); obrirConversacio(conv.altreUid, nom, ini, conv.anunciId); };
             listEl.appendChild(item);
         }
@@ -836,7 +1059,7 @@ function obrirConversacio(altreUid, nom, ini, anunciId) {
     document.getElementById('chat-header').classList.remove('hidden');
     document.getElementById('chat-input-area').classList.remove('hidden');
     document.getElementById('chat-name').textContent = nom;
-    document.getElementById('chat-avatar').textContent = ini;
+    document.getElementById('chat-avatar').innerHTML = ini;
     document.getElementById('chat-anunci').textContent = anunciId || '';
     chatActual = { altreUid, anunciId };
     if (unsubChat) unsubChat();
@@ -844,13 +1067,32 @@ function obrirConversacio(altreUid, nom, ini, anunciId) {
     msgsEl.innerHTML = '<div class="loading"><span class="spinner"></span></div>';
     unsubChat = db.collection('missatges').where('anunci_referencia', '==', anunciId).orderBy('data_enviament', 'asc').onSnapshot(async snap => {
         const el = document.getElementById('chat-messages');
-        const msgs = snap.docs.map(d => d.data()).filter(d => (d.id_emissor === user.uid && d.id_receptor === altreUid) || (d.id_emissor === altreUid && d.id_receptor === user.uid));
+        const msgs = snap.docs.map(d => d.data()).filter(d =>
+            ((d.id_emissor === user.uid && d.id_receptor === altreUid) ||
+                (d.id_emissor === altreUid && d.id_receptor === user.uid)) &&
+            !d[`eliminat_per_${user.uid}`]
+        );
         if (!msgs.length) { el.innerHTML = '<div class="chat-empty">Comença la conversa!</div>'; return; }
         el.innerHTML = msgs.map(m => {
             const sent = m.id_emissor === user.uid;
             const hora = m.data_enviament?.toDate?.()?.toLocaleTimeString('ca', { hour: '2-digit', minute: '2-digit' }) || '';
             const isSistema = m.tipus === 'sistema';
-            if (isSistema) return `<div class="msg msg-system"><div class="msg-text">${m.contingut}</div></div>`;
+            if (m.tipus === 'proposta') {
+                const esMeu = m.id_receptor === user.uid;
+                const estat = m.proposta_estat || 'pendent';
+                const estatLabel = estat === 'acceptada' ? '✅ Acceptada' : estat === 'rebutjada' ? '❌ Rebutjada' : '⏳ Pendent';
+
+                return `
+    <div class="msg msg-system">
+        <div class="msg-text">${m.contingut}</div>
+        ${esMeu && estat === 'pendent' ? `
+        <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="acceptarProposta('${m.anunci_referencia}', '${m.oferta_id}', '${m.id_emissor}')">Acceptar</button>
+            <button class="btn btn-outline btn-sm" onclick="rebutjarProposta('${m.anunci_referencia}', '${m.oferta_id}', '${m.id_emissor}')">Rebutjar</button>
+        </div>
+        ` : `<div style="font-size:12px;margin-top:6px;color:var(--text-muted)">${estatLabel}</div>`}
+    </div>`;
+            }
             return `<div class="msg ${sent ? 'msg-sent' : 'msg-recv'}"><div class="msg-text">${m.contingut}</div><div class="msg-time">${hora}${sent ? (m.llegit ? ' ✓✓' : ' ✓') : ''}</div></div>`;
         }).join('');
         el.scrollTop = el.scrollHeight;
@@ -860,13 +1102,109 @@ function obrirConversacio(altreUid, nom, ini, anunciId) {
         }
     });
 }
+async function acceptarProposta(anunciId, ofertaId, compradorId) {
+    const user = auth.currentUser;
 
+   
+    const anunciDoc = await db.collection('anuncis').doc(anunciId).get();
+    const a = anunciDoc.data();
+
+  
+    await db.collection('anuncis').doc(anunciId).update({
+        estat_anunci: 'reservat',
+        comprador_id: compradorId,
+        oferta_acceptada: ofertaId
+    });
+
+   
+    const ofertaDoc = await db.collection('anuncis').doc(ofertaId).get();
+    const ofertaTitol = ofertaDoc.exists ? ofertaDoc.data().titol : 'Anunci';
+
+   
+    await db.collection('transaccions').add({
+        usuari_id: user.uid,
+        tipus: 'intercanvi_acceptat',
+        anunci_id: anunciId,
+        anunci_titol: a.titol || 'Anunci',
+        punts: 0,
+        contrapart_id: compradorId,
+        data: TS()
+    });
+
+    
+    await db.collection('transaccions').add({
+        usuari_id: compradorId,
+        tipus: 'intercanvi_acceptat',
+        anunci_id: anunciId,
+        anunci_titol: ofertaTitol,
+        punts: 0,
+        contrapart_id: user.uid,
+        data: TS()
+    });
+
+ 
+    await db.collection('missatges').add({
+        contingut: '✅ Proposta acceptada! Parleu pel xat per quedar.',
+        anunci_referencia: anunciId,
+        id_emissor: user.uid,
+        id_receptor: compradorId,
+        tipus: 'sistema',
+        data_enviament: TS(),
+        llegit: false
+    });
+
+    alert('Intercanvi acceptat!');
+}
+async function rebutjarProposta(anunciId, ofertaId, compradorId) {
+    const user = auth.currentUser;
+
+
+    const missatgesPropostes = await db.collection('missatges')
+        .where('anunci_referencia', '==', anunciId)
+        .where('oferta_id', '==', ofertaId)
+        .where('tipus', '==', 'proposta')
+        .get();
+
+    const batch = db.batch();
+    missatgesPropostes.docs.forEach(doc => {
+        batch.update(doc.ref, { proposta_estat: 'rebutjada' });
+    });
+    await batch.commit();
+
+
+    const propostes = await db.collection('propostes')
+        .where('anunci_id', '==', anunciId)
+        .where('oferta_id', '==', ofertaId)
+        .get();
+    const batch2 = db.batch();
+    propostes.docs.forEach(doc => batch2.update(doc.ref, { estat: 'rebutjada' }));
+    await batch2.commit();
+
+
+    await db.collection('missatges').add({
+        contingut: ' Proposta rebutjada.',
+        anunci_referencia: anunciId,
+        id_emissor: user.uid, id_receptor: compradorId,
+        tipus: 'sistema', data_enviament: TS(), llegit: false
+    });
+
+    alert('Proposta rebutjada.');
+}
 async function iniciarXat(anunciId, propietariUid) {
     const user = auth.currentUser; if (!user) return navigate('login');
     if (user.uid === propietariUid) return alert('No et pots enviar missatges a tu mateix.');
-    navigate('chats'); await carregarChats();
+    navigate('chats', false); await carregarChats();
     let nom = 'Usuari', ini = '?';
-    try { const uDoc = await db.collection('usuaris').doc(propietariUid).get(); if (uDoc.exists) { const ud = uDoc.data(); nom = (ud.nom || '') + ' ' + (ud.cognom || ''); ini = (ud.nom || '?').slice(0, 2).toUpperCase(); } } catch (e) { }
+    try {
+        const uDoc = await db.collection('usuaris').doc(propietariUid).get();
+        if (uDoc.exists) {
+            const ud = uDoc.data();
+            nom = (ud.nom || '') + ' ' + (ud.cognom || '');
+            ini = ud.foto
+                ? `<img src="${ud.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+                : (ud.nom || '?').slice(0, 2).toUpperCase();
+        }
+    } catch (e) { }
     obrirConversacio(propietariUid, nom, ini, anunciId);
 }
 
@@ -908,21 +1246,67 @@ function obrirModalValoracio(anunciId, valoratUid) {
 
 async function enviarValoracio() {
     const user = auth.currentUser;
+    if (!user) return;
+
     const estrelles = parseInt(document.getElementById('val-estrelles').value) || 0;
     const comentari = document.getElementById('val-comentari').value.trim();
     const anunciId = document.getElementById('val-anunci-id').value;
     const valoratId = document.getElementById('val-valorat-id').value;
     const alertEl = document.getElementById('val-alert');
-    if (estrelles < 0 || estrelles > 5) { alertEl.className = 'alert alert-error'; alertEl.textContent = 'Les estrelles han de ser entre 0 i 5.'; alertEl.classList.remove('hidden'); return; }
+
+    if (estrelles < 1 || estrelles > 5) {
+        alertEl.className = 'alert alert-error';
+        alertEl.textContent = 'Has de posar entre 1 i 5 estrelles.';
+        alertEl.classList.remove('hidden');
+        return;
+    }
+
     try {
-        await db.collection('valoracions').add({ id_valorat: valoratId, id_redactor: user.uid, comentari: comentari || null, estrelles, id_anunci: anunciId });
-        const vSnap = await db.collection('valoracions').where('id_valorat', '==', valoratId).get();
-        const mitja = (vSnap.docs.reduce((acc, d) => acc + (d.data().estrelles || 0), 0) / vSnap.size).toFixed(1);
-        await db.collection('usuaris').doc(valoratId).update({ valoracio_mitjana: mitja });
+        // Evitar duplicados
+        const existing = await db.collection('valoracions')
+            .where('id_anunci', '==', anunciId)
+            .where('id_redactor', '==', user.uid)
+            .get();
+
+        if (!existing.empty) {
+            alert('Ja has valorat aquest intercanvi.');
+            return;
+        }
+
+        // Guardar valoración
+        await db.collection('valoracions').add({
+            id_valorat: valoratId,
+            id_redactor: user.uid,
+            comentari: comentari || '',
+            estrelles,
+            id_anunci: anunciId,
+            data: TS()
+        });
+
+        // Actualizar media
+        const vSnap = await db.collection('valoracions')
+            .where('id_valorat', '==', valoratId)
+            .get();
+
+        const mitja = (
+            vSnap.docs.reduce((acc, d) => acc + (d.data().estrelles || 0), 0)
+            / vSnap.size
+        ).toFixed(1);
+
+        await db.collection('usuaris').doc(valoratId).update({
+            valoracio_mitjana: mitja
+        });
+
         document.getElementById('modal-valoracio').classList.add('hidden');
-        alert('Valoració enviada!');
+
+        alert('✅ Valoració enviada!');
         veureDeta(anunciId);
-    } catch (e) { alertEl.className = 'alert alert-error'; alertEl.textContent = 'Error: ' + e.message; alertEl.classList.remove('hidden'); }
+
+    } catch (e) {
+        alertEl.className = 'alert alert-error';
+        alertEl.textContent = 'Error: ' + e.message;
+        alertEl.classList.remove('hidden');
+    }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1012,16 +1396,185 @@ function eliminarPreview(i) {
 let imatgesModal = [];
 
 function previewImatgesModal(input) {
-  imatgesModal = [...input.files].slice(0, 5);
-  const grid = document.getElementById('preview-grid-modal');
-  grid.innerHTML = '';
-  imatgesModal.forEach((file, i) => {
-    const url = URL.createObjectURL(file);
-    grid.innerHTML += `<div class="img-preview-item"><img src="${url}"><button class="remove-img" onclick="eliminarPreviewModal(${i})">✕</button></div>`;
-  });
+    imatgesModal = [...input.files].slice(0, 5);
+    const grid = document.getElementById('preview-grid-modal');
+    grid.innerHTML = '';
+    imatgesModal.forEach((file, i) => {
+        const url = URL.createObjectURL(file);
+        grid.innerHTML += `<div class="img-preview-item"><img src="${url}"><button class="remove-img" onclick="eliminarPreviewModal(${i})">✕</button></div>`;
+    });
 }
 
 function eliminarPreviewModal(i) {
-  imatgesModal.splice(i, 1);
-  previewImatgesModal({ files: imatgesModal });
+    imatgesModal.splice(i, 1);
+    previewImatgesModal({ files: imatgesModal });
+}
+
+async function veurePerfil(uid) {
+    const actual = PAGES.find(p => !document.getElementById('page-' + p)?.classList.contains('hidden'));
+if (actual && actual !== 'perfil-public') historialNavegacio.push(actual);
+    navigate('perfil-public', false);
+    const content = document.getElementById('perfil-public-content');
+    content.innerHTML = '<div class="loading"><span class="spinner"></span>Carregant...</div>';
+    const uDoc = await db.collection('usuaris').doc(uid).get();
+    if (!uDoc.exists) { content.innerHTML = '<p>Usuari no trobat.</p>'; return; }
+    const u = uDoc.data();
+    const ini = (u.nom || '?').slice(0, 2).toUpperCase();
+    const anuncisSnap = await db.collection('anuncis').where('usuari_id', '==', uid).where('estat_anunci', '==', 'disponible').get();
+    const anuncisHtml = anuncisSnap.empty ? '<p style="color:var(--text-muted);font-size:14px">Cap anunci actiu.</p>'
+        : anuncisSnap.docs.map(d => {
+            const a = d.data();
+            return `<div class="card" onclick="veureDeta('${d.id}')">
+                <div class="card-img">${(a.imatge && a.imatge[0]) ? `<img src="${a.imatge[0]}" onerror="this.parentElement.innerHTML='📦'">` : '📦'}</div>
+                <div class="card-body"><div class="card-title">${a.titol}</div><div class="card-desc">${a.descripcio}</div></div>
+            </div>`;
+        }).join('');
+    content.innerHTML = `
+        <div class="perfil-header">
+            <div style="width:72px;height:72px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0">${u.foto ? `<img src="${u.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ini}</div>
+            <div class="perfil-info">
+                <h2>${(u.nom || '') + ' ' + (u.cognom || '')}</h2>
+                <p>📍 ${u.localitat || '—'}</p>
+                <div class="perfil-stats">
+                    <div><div class="perfil-stat-num">${u.intercanvis_real || 0}</div><div class="perfil-stat-label">Intercanvis</div></div>
+                    <div><div class="perfil-stat-num">${u.valoracio_mitjana || '—'}</div><div class="perfil-stat-label">Valoració</div></div>
+                </div>
+            </div>
+        </div>
+        ${auth.currentUser && auth.currentUser.uid !== uid ? `<button class="btn btn-outline" style="margin-top:12px" onclick="iniciarXatDirecte('${uid}')">✉ Enviar missatge</button>` : ''}
+        <div class="perfil-form-card">
+            <h3>Anuncis actius</h3>
+            <div class="grid-3">${anuncisHtml}</div>
+        </div>`;
+}
+
+async function iniciarXatDirecte(uid) {
+    navigate('chats', false);
+    await carregarChats();
+    let nom = 'Usuari', ini = '?';
+    try {
+        const uDoc = await db.collection('usuaris').doc(uid).get();
+        if (uDoc.exists) {
+            const ud = uDoc.data();
+            nom = (ud.nom || '') + ' ' + (ud.cognom || '');
+            ini = ud.foto
+                ? `<img src="${ud.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+                : (ud.nom || '?').slice(0, 2).toUpperCase();
+        }
+    } catch (e) { }
+    obrirConversacio(uid, nom, ini, 'general_' + uid);
+}
+
+let imatgesEditar = [];
+let imatgesEditarExistents = [];
+
+function previewImatgesEditar(input) {
+    imatgesEditar = [...input.files].slice(0, 5 - imatgesEditarExistents.length);
+    const grid = document.getElementById('editar-preview-grid');
+    grid.innerHTML = '';
+    imatgesEditar.forEach((file, i) => {
+        const url = URL.createObjectURL(file);
+        grid.innerHTML += `<div class="img-preview-item"><img src="${url}"><button class="remove-img" onclick="eliminarPreviewEditar(${i})">✕</button></div>`;
+    });
+}
+
+function eliminarPreviewEditar(i) {
+    imatgesEditar.splice(i, 1);
+    previewImatgesEditar({ files: imatgesEditar });
+}
+
+function eliminarImatgeExistent(i) {
+    imatgesEditarExistents.splice(i, 1);
+    renderImatgesExistents();
+}
+
+function renderImatgesExistents() {
+    const grid = document.getElementById('editar-imatges-actuals');
+    grid.innerHTML = imatgesEditarExistents.map((url, i) => `
+        <div class="img-preview-item">
+            <img src="${url}">
+            <button class="remove-img" onclick="eliminarImatgeExistent(${i})">✕</button>
+        </div>`).join('');
+}
+
+async function obrirModalEditar(anunciId) {
+    const doc = await db.collection('anuncis').doc(anunciId).get();
+    if (!doc.exists) return;
+    const a = doc.data();
+    document.getElementById('editar-id').value = anunciId;
+    document.getElementById('editar-titol').value = a.titol || '';
+    document.getElementById('editar-desc').value = a.descripcio || '';
+    document.getElementById('editar-modalitat').value = a.modalitat || 'intercanvi';
+    document.getElementById('editar-categoria').value = a.categoria || 'Altres';
+    document.getElementById('editar-punts').value = a.ecopoints || 0;
+    document.getElementById('editar-estat-prod').value = a.estat_producte || 'bon-estat';
+    imatgesEditarExistents = [...(a.imatge || [])];
+    imatgesEditar = [];
+    document.getElementById('editar-preview-grid').innerHTML = '';
+    document.getElementById('editar-alert').classList.add('hidden');
+    renderImatgesExistents();
+    document.getElementById('modal-editar').classList.remove('hidden');
+}
+
+async function guardarEdicio() {
+    const anunciId = document.getElementById('editar-id').value;
+    const titol = document.getElementById('editar-titol').value.trim();
+    const desc = document.getElementById('editar-desc').value.trim();
+    const alertEl = document.getElementById('editar-alert');
+    const btn = document.getElementById('btn-editar');
+    if (!titol || !desc) {
+        alertEl.className = 'alert alert-error';
+        alertEl.textContent = 'Títol i descripció són obligatoris.';
+        alertEl.classList.remove('hidden');
+        return;
+    }
+    btn.textContent = 'Guardant...'; btn.disabled = true;
+    const novesUrls = [];
+    for (const file of imatgesEditar) {
+        try { novesUrls.push(await pujarImgBB(file)); } catch (e) { console.warn(e); }
+    }
+    const toutesImatges = [...imatgesEditarExistents, ...novesUrls].slice(0, 5);
+    try {
+        await db.collection('anuncis').doc(anunciId).update({
+            titol,
+            descripcio: desc,
+            modalitat: document.getElementById('editar-modalitat').value,
+            categoria: document.getElementById('editar-categoria').value,
+            ecopoints: parseInt(document.getElementById('editar-punts').value) || 0,
+            estat_producte: document.getElementById('editar-estat-prod').value,
+            imatge: toutesImatges
+        });
+        document.getElementById('modal-editar').classList.add('hidden');
+        veureDeta(anunciId);
+    } catch (e) {
+        alertEl.className = 'alert alert-error';
+        alertEl.textContent = 'Error: ' + e.message;
+        alertEl.classList.remove('hidden');
+    } finally {
+        btn.textContent = 'Guardar'; btn.disabled = false;
+    }
+}
+
+let indexCarrusel = 0;
+
+function canviarImatge(dir) {
+    const imgs = document.querySelectorAll('#carrusel-imgs img');
+    if (!imgs.length) return;
+    indexCarrusel = (indexCarrusel + dir + imgs.length) % imgs.length;
+    anarAImatge(indexCarrusel);
+}
+
+function anarAImatge(i) {
+    indexCarrusel = i;
+    const carrusel = document.getElementById('carrusel-imgs');
+    if (carrusel) carrusel.style.transform = `translateX(-${i * 100}%)`;
+    document.querySelectorAll('.dot-carrusel').forEach((dot, j) => {
+        dot.style.background = j === i ? '#fff' : 'rgba(255,255,255,0.4)';
+    });
+}
+
+function navegarAPerfil() {
+    const actual = PAGES.find(p => !document.getElementById('page-' + p)?.classList.contains('hidden'));
+    if (actual && actual !== 'perfil') historialNavegacio.push(actual);
+    navigate('perfil', false);
 }
