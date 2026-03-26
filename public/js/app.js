@@ -1351,9 +1351,10 @@ function enviarContacte() {
     const btn = document.getElementById('btn-contacte');
     if (!nom || !email || !missatge) { alertEl.className = 'alert alert-error'; alertEl.textContent = 'Omple tots els camps.'; alertEl.classList.remove('hidden'); return; }
     btn.textContent = 'Enviant...'; btn.disabled = true;
-    emailjs.send('service_drvu5mg', 'template_qtkds4p', { name: nom, email, title: assumpte, message: missatge })
+    emailjs.send('service_venzcal', 'template_qtkds4p', { name: nom, email, title: assumpte, message: missatge })
+
         .then(() => { alertEl.className = 'alert alert-success'; alertEl.textContent = 'Missatge enviat correctament! ✅'; alertEl.classList.remove('hidden'); document.getElementById('c-nom').value = ''; document.getElementById('c-email').value = ''; document.getElementById('c-missatge').value = ''; btn.textContent = 'Enviar missatge'; btn.disabled = false; })
-        .catch(err => { console.error(err); alertEl.className = 'alert alert-error'; alertEl.textContent = 'Error enviant. Torna-ho a intentar.'; alertEl.classList.remove('hidden'); btn.textContent = 'Enviar missatge'; btn.disabled = false; });
+        .catch(err => { console.error('EmailJS error:', JSON.stringify(err)); alertEl.className = 'alert alert-error'; alertEl.textContent = 'Error enviant. Torna-ho a intentar.'; alertEl.classList.remove('hidden'); btn.textContent = 'Enviar missatge'; btn.disabled = false; });
 }
 const IMGBB_KEY = '944935afc5f7c9c0edc61c6eb5782e12';
 
