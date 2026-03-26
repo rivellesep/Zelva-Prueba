@@ -1578,3 +1578,21 @@ function navegarAPerfil() {
     if (actual && actual !== 'perfil') historialNavegacio.push(actual);
     navigate('perfil', false);
 }
+// ═══════════════════════════════════════════════════════
+//  MODE ECO
+// ═══════════════════════════════════════════════════════
+function toggleEco() {
+    const isEco = document.body.classList.toggle('modo-eco');
+    const btn = document.getElementById('btn-eco');
+    btn.textContent = isEco ? '☀️ Eco' : '🌿 Eco';
+    localStorage.setItem('modoEco', isEco);
+}
+
+// Recuperar preferència en carregar
+(function () {
+    if (localStorage.getItem('modoEco') === 'true') {
+        document.body.classList.add('modo-eco');
+        const btn = document.getElementById('btn-eco');
+        if (btn) btn.textContent = '☀️ Eco';
+    }
+})();

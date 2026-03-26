@@ -1554,3 +1554,40 @@ footer {
 .chat-item:hover .btn-delete-chat {
   opacity: 1;
 }
+/* BOTÓ ECO */
+.btn-eco {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-eco:hover {
+  border-color: #4CAF50;
+  color: #4CAF50;
+}
+
+/* MODE ECO — FOSC */
+body:not(.modo-eco) {
+  filter: brightness(1);
+  transition: filter 0.4s;
+}
+body.modo-eco {
+  filter: brightness(1.35) saturate(0.8);
+  transition: filter 0.4s;
+  background-color: #f5f5f0;
+}
+body.modo-eco .card,
+body.modo-eco .auth-box,
+body.modo-eco .modal-box,
+body.modo-eco nav,
+body.modo-eco .chat-panel,
+body.modo-eco footer {
+  filter: brightness(2.5) invert(1) hue-rotate(180deg);
+}
+body.modo-eco img {
+  filter: invert(1) hue-rotate(180deg);
+}
