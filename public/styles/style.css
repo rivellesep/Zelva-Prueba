@@ -1632,3 +1632,74 @@ footer {
   background: var(--surface2);
   border: 1px;
 }
+/* ═══════════════════════════════════════════════════════
+   ── INTERRUPTOR ECO (ESTILO MÓVIL PÍLDORA) ──
+   ═══════════════════════════════════════════════════════ */
+
+.eco-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  /* Eliminamos padding/margin extra para que el cursor no falle */
+  padding: 0;
+  margin: 0;
+  vertical-align: middle;
+}
+
+/* Ocultamos el checkbox de forma accesible (sigue siendo funcional) */
+.eco-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+/* ── EL DESLIZADOR (LA PÍLDORA DE FONDO) ── */
+.eco-slider {
+  position: relative; /* Importante para posicionar el círculo dentro */
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  /* Color Rojo OFF (puedes usar var(--error) de tu tema eco si prefieres) */
+  background-color: #EF5350; 
+  border-radius: 13px; /* Forma de píldora perfecta (la mitad de la altura) */
+  transition: background-color 0.3s ease; /* Transición suave de color al encender */
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); /* Efecto de profundidad sutil */
+}
+
+/* ── EL CÍRCULO (EL KNOB/BOTÓN MÓVIL) ── */
+.eco-knob {
+  position: absolute;
+  /* Centramos verticalmente el círculo */
+  top: 2px; /* Margen superior de 2px (calculado: (26-22)/2) */
+  left: 2px; /* Margen izquierdo de 2px */
+  width: 22px; /* Tamaño del círculo (un poco más pequeño que la píldora) */
+  height: 22px;
+  background-color: #FFFFFF; /* Círculo blanco */
+  border-radius: 50%; /* Círculo perfecto */
+  transition: transform 0.3s ease-in-out; /* Transición suave del movimiento */
+  /* Sombra para el relieve del círculo (¡clave para el look móvil!) */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+
+/* ═══════════════════════════════════════════════════════
+   LÓGICA DE ESTADOS Y TRANSICIÓN (LA MAGIA)
+   ═══════════════════════════════════════════════════════ */
+
+/* Cuando el checkbox oculto está MARCADO (:checked) */
+
+/* 1. Cambiamos el color de fondo de la píldora */
+.eco-switch input:checked + .eco-slider {
+  /* Color Verde ON (puedes usar var(--success) de tu tema eco si prefieres) */
+  background-color: #2ECC71;
+}
+
+/* 2. Desplazamos el círculo hacia la derecha */
+.eco-switch input:checked + .eco-slider .eco-knob {
+  /* Movemos el círculo 24px a la derecha. 
+     (Píldora: 50px. Círculo: 22px. Margen: 2px. 
+     Desplazamiento total final: 50 - 22 - 2 = 26px de posición. 
+     Como partimos de 2px, nos movemos 24px.) */
+  transform: translateX(24px); 
+}

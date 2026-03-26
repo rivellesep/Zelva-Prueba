@@ -156,7 +156,6 @@ async function doRegister() {
     const email = document.getElementById('regEmail').value.trim();
     const pass = document.getElementById('regPass').value;
 
-   
     if (!email || !pass || !nom || !cognom || !localitat)
         return showAlert('Omple tots els camps obligatoris (*).');
     if (pass.length < 6)
@@ -164,20 +163,31 @@ async function doRegister() {
     if (telefon && !/^\d{9}$/.test(telefon))
         return showAlert('El telèfon ha de tenir exactament 9 dígits.');
 
- 
-
-
-
     try {
+        // ❌ Antes de crear la cuenta, revisar en la colección de teléfonos
+        if (telefon) {
+            const snap = await db.collection('telefonosRegistrados').doc(telefon).get();
+            if (snap.exists) return showAlert('Aquest número de telèfon ja està registrat.');
+        }
+
         const cred = await auth.createUserWithEmailAndPassword(email, pass);
-        await Promise.all([
-            db.collection('usuaris').doc(cred.user.uid).set({
-                nom, cognom, localitat, telefon: telefon || null, foto: '',
-                data_creacio: TS(), punts: 200,
-                intercanvis_real: 0, valoracio_mitjana: null
-            }),
-            cred.user.updateProfile({ displayName: nom })
-        ]);
+
+        // Guardar usuario
+        await db.collection('usuaris').doc(cred.user.uid).set({
+            nom, cognom, localitat, telefon: telefon || null, foto: '',
+            data_creacio: TS(), punts: 200,
+            intercanvis_real: 0, valoracio_mitjana: null
+        });
+        await cred.user.updateProfile({ displayName: nom });
+
+        // Guardar teléfono en colección separada
+        if (telefon) {
+            await db.collection('telefonosRegistrados').doc(telefon).set({
+                uid: cred.user.uid,
+                createdAt: TS()
+            });
+        }
+
         showAlert('Compte creat! Tens 200 EcoPoints de benvinguda 🎉', 'success');
     } catch (e) {
         showAlert(tradError(e.code));
