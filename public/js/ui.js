@@ -19,7 +19,7 @@ function enviarContacte() {
     btn.textContent = 'Enviant...'; btn.disabled = true;
     
     // Sustituye 'TU_TEMPLATE_ID' por el ID de tu plantilla gratuita de EmailJS
-    emailjs.send('service_drvu5mg', 'TU_TEMPLATE_ID', { name: nom, email, title: assumpte, message: missatge })
+    emailjs.send('service_venzcal', 'template_qtkds4p', { name: nom, email, title: assumpte, message: missatge })
         .then(() => {
             alertEl.className = 'alert alert-success';
             alertEl.textContent = 'Missatge enviat correctament! ✅';
